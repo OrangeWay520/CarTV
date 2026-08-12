@@ -1,6 +1,6 @@
 # OrangeIPTV.Car（橙子网络电视）
 
-一款专为**车机 / Android TV 大屏**打造的 Android 网络电视直播应用，基于 Jetpack Compose 构建，界面现代美观、操作简单，支持触摸与遥控器双重交互。
+一款专为**车机 / Android 大屏**打造的 Android 网络电视直播应用，基于 Jetpack Compose 构建，界面现代美观、操作简单，支持触摸与遥控器双重交互。
 
 ## 功能特性
 
