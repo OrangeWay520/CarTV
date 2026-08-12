@@ -1,0 +1,27 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+/app/build
+/app/release
+*.apk
+*.aab
+*.jks
+*.keystore
+
+# 本机构建辅助脚本与日志（含绝对路径，不适合上传）
+/.kotlin
+/build.bat
+/check.bat
+/check_log.bat
+/copy_commands.cmd
+/copy_wrapper.bat
+/launcher.bat
+/build_log.txt
+/check_log.txt
