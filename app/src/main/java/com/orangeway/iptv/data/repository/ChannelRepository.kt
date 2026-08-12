@@ -120,13 +120,15 @@ class ChannelRepository {
     }
 
     /**
-     * 按频道名合并多个 URL
+     * 按"频道名+分类"合并多个 URL
      * 例如 CCTV1 在 TXT 文件中有多个地址，合并成一个 Channel 对象
+     * 注意：必须按 (name, category) 分组，否则双分类频道（如"广东少儿"同时归入
+     * 少儿频道和地方频道）会被合并成一条，只保留第一个出现的分类
      */
     private fun mergeChannels(channels: List<Channel>): List<Channel> {
         val merged = channels
-            .groupBy { it.name }
-            .map { (name, list) ->
+            .groupBy { it.name to it.category }
+            .map { (_, list) ->
                 val first = list.first()
                 // 使用 allUrls 而不是 url，确保 mergeM3UWithTXT 合并的多源信息不被丢失
                 val allUrls = list.flatMap { it.allUrls }.distinct()

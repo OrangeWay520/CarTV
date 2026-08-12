@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!--
+      以下版本检查被抑制的原因：
+      - media3 必须保持 1.9.0：本地 FFmpeg 软解码扩展 AAR（lib-decoder-ffmpeg-release.aar）与该版本严格绑定，
+        升级会导致软解码失效，且没有对应的现成 AAR 可用。
+      - compose-bom 保持在 2025.08.00：升级到 2026.x 会连带 foundation 大版本跳变，
+        当前 UI 代码基于 foundation 1.9 API 编写，避免发布前引入兼容性风险。
+      - okhttp 保持 4.12.0：5.x 仍为预发布大版本，API 有破坏性变更。
+      - compileSdk/targetSdk 保持在 36：当前 AGP 9.3.1 支持范围内。
+    -->
+    <issue id="GradleDependency" severity="ignore" />
+    <issue id="NewerVersionAvailable" severity="ignore" />
+    <issue id="AndroidGradlePluginVersion" severity="ignore" />
+    <issue id="OldTargetApi" severity="ignore" />
+</lint>

@@ -25,7 +25,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Palette
@@ -138,15 +138,22 @@ fun SettingsScreen(
     }
 
     // 进入地区设置页时初始化 pendingRegionMap，离开时清空
+    // 注意：不能用 pendingRegionMap.isEmpty() 判断是否已初始化，
+    // 否则用户清空所有选择（如取消全部城市勾选）返回省份页时，
+    // 会被 DataStore 里的旧数据重新覆盖，导致已清除的选择又恢复
+    var regionPendingInited by remember { mutableStateOf(false) }
     LaunchedEffect(currentPage) {
         when (currentPage) {
-            SettingsPage.REGION_PROVINCE, SettingsPage.REGION_CITY -> {
-                if (pendingRegionMap.isEmpty()) {
+            SettingsPage.REGION_PROVINCE -> {
+                // 仅在首次进入地区设置时从 DataStore 加载
+                if (!regionPendingInited) {
                     pendingRegionMap = settingsRepository.regionData.first()
+                    regionPendingInited = true
                 }
             }
             SettingsPage.MAIN -> {
                 pendingRegionMap = emptyMap()
+                regionPendingInited = false
             }
             else -> { /* 其他页面不处理 pendingRegionMap */ }
         }
@@ -316,10 +323,8 @@ private fun MainMenuPage(
         "当前: " + regionMap.entries.joinToString(", ") { (province, entry) ->
             if (entry.showAll) "$province·全省"
             else {
-                val parts = mutableListOf<String>()
-                if (entry.showProvince) parts.add("$province·省级")
-                parts.add("$province·${entry.cities.joinToString("/")}")
-                parts.joinToString(", ")
+                // 仅显示所选城市，不显示省级频道状态
+                if (entry.cities.isNotEmpty()) "$province·${entry.cities.joinToString("/")}" else "$province·全省"
             }
         }
     } else {
@@ -333,7 +338,7 @@ private fun MainMenuPage(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         MenuCard(
-            icon = Icons.Default.List,
+            icon = Icons.AutoMirrored.Filled.List,
             title = "播放列表设置",
             subtitle = "配置直播源地址和刷新间隔",
             onClick = onPlaylistClick
@@ -474,6 +479,48 @@ private fun PlaylistSettingsPage(
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground
         )
+
+        // === 快速选择预置播放列表 ===
+        // Orange Way 播放列表：支持 CDN 加速开关（开=gh-proxy 加速地址，关=GitHub 原始地址）
+        val orangeCdnEnabled = urlInput == SettingsRepository.DEFAULT_API_URL
+        PlaylistPresetCard(
+            name = "Orange Way播放列表",
+            description = "多源聚合，1000+ 频道，每 6 小时自动更新",
+            isSelected = urlInput == SettingsRepository.DEFAULT_API_URL ||
+                urlInput == SettingsRepository.ORANGE_PLAYLIST_URL,
+            onClick = {
+                onUrlChange(
+                    if (orangeCdnEnabled) SettingsRepository.DEFAULT_API_URL
+                    else SettingsRepository.ORANGE_PLAYLIST_URL
+                )
+            },
+            trailing = {
+                // CDN 加速开关：开启用 gh-proxy 加速，关闭用 GitHub 原始地址
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Switch(
+                        checked = orangeCdnEnabled,
+                        onCheckedChange = { enabled ->
+                            onUrlChange(
+                                if (enabled) SettingsRepository.DEFAULT_API_URL
+                                else SettingsRepository.ORANGE_PLAYLIST_URL
+                            )
+                        }
+                    )
+                    Text(
+                        text = "CDN加速",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        )
+        PlaylistPresetCard(
+            name = "vbskycn 备用源",
+            description = "内置默认源，央视/卫视/地方频道",
+            isSelected = urlInput == SettingsRepository.BACKUP_API_URL,
+            onClick = { onUrlChange(SettingsRepository.BACKUP_API_URL) }
+        )
+
         OutlinedTextField(
             value = urlInput,
             onValueChange = onUrlChange,
@@ -621,6 +668,61 @@ private fun PlaylistSettingsPage(
 }
 
 @Composable
+private fun PlaylistPresetCard(
+    name: String,
+    description: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    trailing: @Composable (() -> Unit)? = null
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            else
+                MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = if (isSelected)
+                    Icons.Default.CheckCircle
+                else
+                    Icons.Default.RadioButtonUnchecked,
+                contentDescription = null,
+                tint = if (isSelected)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(end = 12.dp)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (trailing != null) {
+                Spacer(Modifier.width(8.dp))
+                trailing()
+            }
+        }
+    }
+}
+
+@Composable
 private fun ProvinceSelectionPage(
     modifier: Modifier,
     regionMap: Map<String, RegionEntry>,
@@ -663,10 +765,8 @@ private fun ProvinceSelectionPage(
                         val entry = regionMap[province.name]!!
                         val desc = if (entry.showAll) "全省"
                                    else {
-                                       val parts = mutableListOf<String>()
-                                       if (entry.showProvince) parts.add("省级")
-                                       parts.addAll(entry.cities)
-                                       parts.joinToString("/")
+                                       // 仅显示所选城市，不显示省级频道状态
+                                       if (entry.cities.isNotEmpty()) entry.cities.joinToString("/") else "全省"
                                    }
                         Text(
                             text = desc,
@@ -1177,22 +1277,38 @@ private fun AboutPage(modifier: Modifier) {
                 HorizontalDivider()
                 AboutRow("版本号", "1.0.0")
                 HorizontalDivider()
-                AboutRow("应用描述", "车机网络电视播放器\n支持央视、卫视、地方频道等直播源播放")
+                AboutRow("应用类型", "车机 / 大屏网络电视直播播放器")
                 HorizontalDivider()
-                AboutRow("数据来源", "live.zbds.top\nM3U 格式直播源，含台标信息")
+                AboutRow("应用描述", "面向车载场景的直播播放应用，聚合央视、卫视、地方、港澳台、少儿、体育、电影、音乐、纪录、付费等十大分类频道，点击即可一键播放，失效源自动切换，畅享稳定流畅的观看体验。")
                 HorizontalDivider()
-                AboutRow("技术栈", "Jetpack Compose + ExoPlayer + OkHttp")
+                AboutRow(
+                    "核心功能",
+                    "• 多源聚合播放，失效自动切换\n" +
+                        "• 支持 M3U / TXT 播放列表及双源合并\n" +
+                        "• 台标缓存 + 加载超时兜底\n" +
+                        "• 节目预告（EPG 电子节目单）\n" +
+                        "• 地区筛选（省份 / 城市）\n" +
+                        "• 频道分类自定义显示\n" +
+                        "• 硬件 / 软件解码切换\n" +
+                        "• 浅色 / 深色 / 跟随系统主题"
+                )
                 HorizontalDivider()
-                AboutRow("开源协议", "MIT License")
+                AboutRow(
+                    "技术栈",
+                    "Kotlin · Jetpack Compose (Material 3)\n" +
+                        "Media3 ExoPlayer · Coil · OkHttp · DataStore"
+                )
                 HorizontalDivider()
                 AboutRow("开发者", "Orange Way")
+                HorizontalDivider()
+                AboutRow("开源协议", "MIT License")
             }
         }
 
         Spacer(Modifier.height(32.dp))
 
         Text(
-            text = "© 2026 Orange Way. All rights reserved.",
+            text = "© 2026 Orange Way · MIT License",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

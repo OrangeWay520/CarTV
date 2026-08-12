@@ -7,7 +7,6 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
@@ -24,6 +23,11 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.OptIn
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.graphics.toColorInt
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -44,6 +48,7 @@ import com.orangeway.iptv.data.repository.EpgRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(UnstableApi::class)
 class PlayerActivity : ComponentActivity() {
@@ -85,14 +90,11 @@ class PlayerActivity : ComponentActivity() {
 
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
 
-        window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_FULLSCREEN
-                        or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                        or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                )
+        // 沉浸式全屏（隐藏状态栏/导航栏），兼容 API 23+（替代废弃的 systemUiVisibility）
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
 
         channelName = intent.getStringExtra("channel_name") ?: "未知频道"
         val urlsJson = intent.getStringExtra("channel_urls") ?: ""
@@ -121,7 +123,7 @@ class PlayerActivity : ComponentActivity() {
             // 视频内容填满容器（配合容器宽高比实现强制比例）
             resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
             setFocusable(false)
-            setFocusableInTouchMode(false)
+            isFocusableInTouchMode = false
         }
         aspectRatioContainer?.addView(playerView)
 
@@ -219,7 +221,7 @@ class PlayerActivity : ComponentActivity() {
         // --- 选择播放源 ---
         val sourceLabel = TextView(this).apply {
             text = "选择播放源"
-            setTextColor(Color.parseColor("#FF9800"))
+            setTextColor("#FF9800".toColorInt())
             textSize = 13f
             setPadding(0, 0, 0, 12)
         }
@@ -236,7 +238,7 @@ class PlayerActivity : ComponentActivity() {
         // --- 画面比例 ---
         val ratioLabel = TextView(this).apply {
             text = "画面比例"
-            setTextColor(Color.parseColor("#FF9800"))
+            setTextColor("#FF9800".toColorInt())
             textSize = 13f
             setPadding(0, 24, 0, 12)
         }
@@ -260,7 +262,7 @@ class PlayerActivity : ComponentActivity() {
                 setTextColor(Color.WHITE)
                 background = if (mode == currentAspectRatio) {
                     GradientDrawable().apply {
-                        setColor(Color.parseColor("#FF9800")); cornerRadius = 24f
+                        setColor("#FF9800".toColorInt()); cornerRadius = 24f
                     }
                 } else {
                     GradientDrawable().apply {
@@ -414,7 +416,7 @@ class PlayerActivity : ComponentActivity() {
             val btn = container.getChildAt(i) as? TextView ?: continue
             val mode = options.getOrNull(i)?.second ?: continue
             btn.background = if (mode == currentAspectRatio) {
-                GradientDrawable().apply { setColor(Color.parseColor("#FF9800")); cornerRadius = 24f }
+                GradientDrawable().apply { setColor("#FF9800".toColorInt()); cornerRadius = 24f }
             } else {
                 GradientDrawable().apply { setColor(Color.argb(60, 255, 255, 255)); cornerRadius = 24f }
             }
@@ -423,6 +425,7 @@ class PlayerActivity : ComponentActivity() {
 
     // ========== 播放源按钮 ==========
 
+    @Suppress("SetTextI18n")
     private fun updateSourceButtons() {
         sourceButtonsContainer?.removeAllViews()
         urls.forEachIndexed { index, _ ->
@@ -432,7 +435,7 @@ class PlayerActivity : ComponentActivity() {
                 setPadding(40, 24, 40, 24)
                 setTextColor(Color.WHITE)
                 background = if (index == currentUrlIndex) {
-                    GradientDrawable().apply { setColor(Color.parseColor("#FF9800")); cornerRadius = 24f }
+                    GradientDrawable().apply { setColor("#FF9800".toColorInt()); cornerRadius = 24f }
                 } else {
                     GradientDrawable().apply { setColor(Color.argb(60, 255, 255, 255)); cornerRadius = 24f }
                 }
@@ -471,7 +474,7 @@ class PlayerActivity : ComponentActivity() {
                 epgRefreshStarted = true
                 lifecycleScope.launch {
                     while (isActive) {
-                        delay(60_000)
+                        delay(60_000.milliseconds)
                         runOnUiThread { updateEpgText() }
                     }
                 }
@@ -503,6 +506,7 @@ class PlayerActivity : ComponentActivity() {
      * 弹出节目预告窗口（半透明）
      * 显示当前频道从此刻开始的后续节目列表
      */
+    @Suppress("SetTextI18n", "UseKtx")
     private fun showEpgDialog() {
         if (epgProgrammes.isEmpty()) {
             Toast.makeText(this, "暂无节目预告数据，请稍后重试", Toast.LENGTH_SHORT).show()
@@ -532,20 +536,20 @@ class PlayerActivity : ComponentActivity() {
             }
             row.addView(TextView(this@PlayerActivity).apply {
                 text = "${p.startTimeText}-${p.endTimeText}"
-                setTextColor(if (isCurrent) Color.parseColor("#FF9800") else Color.parseColor("#CCCCCC"))
+                setTextColor(if (isCurrent) "#FF9800".toColorInt() else "#CCCCCC".toColorInt())
                 textSize = 14f
                 width = 130.toPx()
             })
             row.addView(TextView(this@PlayerActivity).apply {
                 text = p.title
-                setTextColor(if (isCurrent) Color.parseColor("#FF9800") else Color.WHITE)
+                setTextColor(if (isCurrent) "#FF9800".toColorInt() else Color.WHITE)
                 textSize = 15f
                 maxLines = 1
             })
             if (isCurrent) {
                 row.addView(TextView(this@PlayerActivity).apply {
                     text = "（正在播放）"
-                    setTextColor(Color.parseColor("#FF9800"))
+                    setTextColor("#FF9800".toColorInt())
                     textSize = 12f
                     setPadding(8.toPx(), 0, 0, 0)
                 })
@@ -578,7 +582,7 @@ class PlayerActivity : ComponentActivity() {
             ).apply { topMargin = 8.toPx() })
             addView(TextView(this@PlayerActivity).apply {
                 text = "点击窗口外部关闭"
-                setTextColor(Color.parseColor("#888888"))
+                setTextColor("#888888".toColorInt())
                 textSize = 12f
                 gravity = Gravity.CENTER
                 setPadding(0, 16.toPx(), 0, 0)
@@ -638,7 +642,7 @@ class PlayerActivity : ComponentActivity() {
             .also { exoPlayer ->
                 playerView?.player = exoPlayer
                 val mediaItem = MediaItem.Builder()
-                    .setUri(Uri.parse(url))
+                    .setUri(url.toUri())
                     .setMediaMetadata(androidx.media3.common.MediaMetadata.Builder().setTitle(channelName).build())
                     .build()
                 exoPlayer.setMediaItem(mediaItem)
@@ -665,7 +669,6 @@ class PlayerActivity : ComponentActivity() {
                                         val type = group.type
                                         for (i in 0 until group.length) {
                                             val supported = group.isTrackSupported(i)
-                                            val fmt = group.getTrackFormat(i)
                                             if (type == C.TRACK_TYPE_AUDIO) {
                                                 audioTrackCount++
                                                 if (supported) audioSupportedCount++

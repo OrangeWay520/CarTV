@@ -8,7 +8,7 @@
 - 基于 **Media3 ExoPlayer** 的流媒体播放，支持 HLS（M3U8）与 M3U/TXT 直播源
 - **多播放源**：同一频道保留全部可用播放源，播放失败或遇到不支持的音频编码时**自动切换下一源**
 - **重复播放**：对短时长的直播片段自动循环播放，保证画面不中断
-- **Bilibili 风格播放器**：渐变黑色顶栏（现代返回按钮 + 频道标题）、渐变黑色底部控制栏
+- **现代风格播放器**：渐变黑色顶栏（现代返回按钮 + 频道标题）、渐变黑色底部控制栏
 - 控制栏支持**触摸显隐**，5 秒无操作自动隐藏；支持画面比例切换（原始/16:9/4:3/填充）
 
 ### 🗂 频道管理
@@ -74,8 +74,8 @@ app/src/main/java/com/orangeway/iptv/
 ## 环境要求
 
 - **JDK 17** 及以上
-- **Android Studio**（最新稳定版，建议 Ladybug 及以上）
-- Android SDK：compileSdk **36**、minSdk 23、targetSdk 36
+- **Android Studio**（最新稳定版）
+- Android SDK：compileSdk **37**、minSdk 23、targetSdk 37
 - 支持 Android 6.0（API 23）+ 的 Android 设备 / 车机 / 电视盒子
 
 > 项目使用 Gradle Wrapper，首次构建会自动下载依赖。
@@ -112,11 +112,36 @@ app/src/main/java/com/orangeway/iptv/
 
 ## 免责声明
 
-- 本项目为开源学习项目，仅提供播放器客户端能力，**不包含任何自建媒体资源**。
-- 应用内播放列表默认指向第三方公开直播源，直播源的有效性与合法性由各数据源维护方负责。
+- 本项目为开源学习项目，仅提供播放器客户端能力，**不包含任何自建媒体资源**，不存储、不托管、不转码任何音视频内容。
+- 应用内播放列表默认指向第三方公开直播源，直播源的有效性与合法性由各数据源维护方负责，与本项目无关。
+- 文中出现的产品名称、商标、服务标志均为其各自所有者的财产，本说明仅作客观描述使用，不构成任何授权、合作或背书关系。
 - 请遵守当地法律法规，仅观看已获授权的直播内容。
 - 若涉及版权问题，请权利人联系相关数据源方处理。
 
 ## License
 
-本项目代码仅供学习交流使用，请勿用于商业用途。
+本项目基于 **MIT License** 开源，仅供学习交流使用，请勿用于商业用途。
+
+```text
+MIT License
+
+Copyright (c) 2026 Orange Way
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```

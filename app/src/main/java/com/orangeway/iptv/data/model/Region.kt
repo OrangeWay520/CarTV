@@ -10,14 +10,6 @@ data class Province(
  */
 object RegionProvider {
 
-    /** 判断频道名称是否属于指定省/市 */
-    fun isChannelInRegion(channelName: String, provinceName: String, cityNames: List<String>): Boolean {
-        // 检查频道名是否包含省份名（如 湖南都市 包含"湖南"）
-        if (channelName.contains(provinceName)) return true
-        // 检查频道名是否包含任一城市名
-        return cityNames.any { channelName.contains(it) }
-    }
-
     /** 获取所有省份列表 */
     val provinces: List<Province> = listOf(
         Province("北京", listOf("北京")),

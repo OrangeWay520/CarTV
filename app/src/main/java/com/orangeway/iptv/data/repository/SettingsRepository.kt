@@ -35,9 +35,15 @@ class SettingsRepository(private val context: Context) {
         private val MERGE_TXT_KEY = booleanPreferencesKey("merge_txt_enabled")
         private val MERGE_TXT_URL_KEY = stringPreferencesKey("merge_txt_url")
 
-        // 默认使用 M3U 格式直播源（含台标、EPG 等元数据）
+        // 默认使用用户自建的聚合播放列表（多源、自动更新，经 gh-proxy 加速）
         // 也可部署 iptv-api (https://github.com/Guovin/iptv-api) 后填自己的地址
-        const val DEFAULT_API_URL = "https://live.zbds.top/tv/iptv4.m3u"
+        const val DEFAULT_API_URL =
+            "https://v6.gh-proxy.org/https://raw.githubusercontent.com/OrangeWay520/my-iptv/master/my_channels.m3u"
+        /** Orange Way 播放列表原始地址（不经 CDN 加速） */
+        const val ORANGE_PLAYLIST_URL =
+            "https://raw.githubusercontent.com/OrangeWay520/my-iptv/master/my_channels.m3u"
+        /** 备用源：vbskycn 原版 M3U（含台标、EPG 等元数据） */
+        const val BACKUP_API_URL = "https://live.zbds.top/tv/iptv4.m3u"
         const val DEFAULT_REFRESH_INTERVAL = "30"
     }
 
@@ -83,32 +89,11 @@ class SettingsRepository(private val context: Context) {
     }
 
     /**
-     * 保存一个省份的地区设置（合并到已有数据中）
-     */
-    suspend fun saveRegion(province: String, cities: List<String>, showAll: Boolean) {
-        context.dataStore.edit { preferences ->
-            val existing = parseRegionData(preferences[REGION_DATA_KEY] ?: "")
-            val updated = existing.toMutableMap()
-            updated[province] = RegionEntry(cities, showAll)
-            preferences[REGION_DATA_KEY] = serializeRegionData(updated)
-        }
-    }
-
-    /**
      * 保存整个地区设置 Map（覆盖写入）
      */
     suspend fun saveAllRegions(map: Map<String, RegionEntry>) {
         context.dataStore.edit { preferences ->
             preferences[REGION_DATA_KEY] = serializeRegionData(map)
-        }
-    }
-
-    /**
-     * 清除所有地区设置
-     */
-    suspend fun clearRegion() {
-        context.dataStore.edit { preferences ->
-            preferences.remove(REGION_DATA_KEY)
         }
     }
 

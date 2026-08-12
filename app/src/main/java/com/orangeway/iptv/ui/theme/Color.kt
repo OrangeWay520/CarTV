@@ -26,5 +26,4 @@ val LightOnSurface = Color(0xFF1C2128)
 val LightOnSurfaceVariant = Color(0xFF656D76)
 
 // 频道卡片颜色
-val CardBackground = Color(0xFF1C2128)
 val CardBorder = Color(0xFF30363D)
