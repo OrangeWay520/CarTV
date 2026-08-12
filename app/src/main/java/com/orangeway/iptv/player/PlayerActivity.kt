@@ -8,6 +8,7 @@ import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
@@ -45,6 +46,7 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.orangeway.iptv.data.model.EpgProgramme
 import com.orangeway.iptv.data.repository.EpgRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -65,6 +67,11 @@ class PlayerActivity : ComponentActivity() {
     private var currentUrlIndex = 0
     private var urls: List<String> = emptyList()
     private var channelName: String = ""
+
+    // 播放卡顿监控：缓冲过久自动切换下一个源
+    private var stallJob: Job? = null
+    private var bufferingStartMs = 0L
+    private var hasBeenReady = false
 
     // 顶部渐变条
     private var topBar: View? = null
@@ -137,6 +144,7 @@ class PlayerActivity : ComponentActivity() {
         // 应用默认画面比例（自适应）
         applyAspectRatio(currentAspectRatio)
 
+        // 播放当前频道（默认从源 1 开始，失败/卡顿自动逐个切换）
         startPlayback(currentUrlIndex)
 
         // 加载节目预告
@@ -602,12 +610,41 @@ class PlayerActivity : ComponentActivity() {
 
     // ========== 播放控制 ==========
 
+    /**
+     * 播放卡顿监控：缓冲状态持续过久视为卡顿，自动切换下一个源。
+     * - 已出过画面(READY 过)：缓冲 > 5 秒即切换
+     * - 首次加载(从未 READY)：缓冲 > 6 秒即切换
+     */
+    private fun startStallMonitor() {
+        stallJob?.cancel()
+        stallJob = lifecycleScope.launch {
+            while (isActive) {
+                delay(1000)
+                if (!isActive) break
+                val start = bufferingStartMs
+                if (start > 0 && urls.size > 1) {
+                    val threshold = if (hasBeenReady) 5000L else 6000L
+                    if (SystemClock.elapsedRealtime() - start > threshold) {
+                        runOnUiThread {
+                            Toast.makeText(this@PlayerActivity, "播放卡顿，自动切换源…", Toast.LENGTH_SHORT).show()
+                            tryNextUrl()
+                        }
+                        break
+                    }
+                }
+            }
+        }
+    }
+
     private fun startPlayback(index: Int) {
         if (index >= urls.size) {
             runOnUiThread { Toast.makeText(this, "所有播放地址均无法播放", Toast.LENGTH_LONG).show() }
             return
         }
         currentUrlIndex = index
+        // 重置卡顿监控状态
+        bufferingStartMs = 0L
+        hasBeenReady = false
         val url = urls[index]
         Log.d(TAG, "开始播放源 ${index + 1}/${urls.size}: $url")
         player?.release()
@@ -619,16 +656,12 @@ class PlayerActivity : ComponentActivity() {
             .setAllowCrossProtocolRedirects(true)
         val dataSourceFactory = DefaultDataSource.Factory(this, httpDataSourceFactory)
 
-        // 解码模式
-        val decoderMode = intent.getStringExtra("decoder_mode") ?: "auto"
+        // 渲染器：默认硬解优先（主流格式流畅省电）；
+        // 音频遇到硬解不支持的编码（如 AC3/EAC3/DTS/TrueHD）时，
+        // 自动回退 FFmpeg 扩展软解（已内置全音频解码器），不浪费播放源。
         val renderersFactory = DefaultRenderersFactory(this).apply {
             setEnableDecoderFallback(true)
-            setExtensionRendererMode(
-                when (decoderMode) {
-                    "software" -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
-                    else -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
-                }
-            )
+            setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
         }
         val trackSelector = DefaultTrackSelector(this).apply {
             setParameters(buildUponParameters().build())
@@ -659,6 +692,8 @@ class PlayerActivity : ComponentActivity() {
                     override fun onPlaybackStateChanged(playbackState: Int) {
                         when (playbackState) {
                             Player.STATE_READY -> {
+                                hasBeenReady = true
+                                bufferingStartMs = 0L
                                 Log.d(TAG, "播放就绪，源 ${currentUrlIndex + 1}/${urls.size}")
                                 // 音轨诊断
                                 try {
@@ -691,6 +726,11 @@ class PlayerActivity : ComponentActivity() {
                                 } catch (_: Throwable) {}
                                 if (overlayVisible) updateSourceButtons()
                             }
+                            Player.STATE_BUFFERING -> {
+                                if (bufferingStartMs == 0L) {
+                                    bufferingStartMs = SystemClock.elapsedRealtime()
+                                }
+                            }
                             else -> {}
                         }
                     }
@@ -705,8 +745,11 @@ class PlayerActivity : ComponentActivity() {
                 })
             }
         if (overlayVisible) updateSourceButtons()
+        // 启动卡顿监控（缓冲过久自动切换下一个源）
+        startStallMonitor()
     }
 
+    /** 按顺序尝试下一个播放源（原始逐个切换方式） */
     private fun tryNextUrl() {
         val nextIndex = currentUrlIndex + 1
         if (nextIndex < urls.size) startPlayback(nextIndex)
@@ -730,6 +773,7 @@ class PlayerActivity : ComponentActivity() {
     override fun onResume() { super.onResume(); player?.playWhenReady = true }
     override fun onDestroy() {
         super.onDestroy()
+        stallJob?.cancel()
         topBar?.removeCallbacks(hideRunnable)
         bottomBar?.removeCallbacks(hideRunnable)
         player?.release()

@@ -1,7 +1,19 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
+
+// 读取 local.properties（不在版本控制中），用于问题反馈的 GitHub Token
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) FileInputStream(f).use { load(it) }
+}
+val githubToken = localProps.getProperty("GITHUB_TOKEN") ?: ""
+val wxpusherAppToken = localProps.getProperty("WXPUSHER_APPTOKEN") ?: ""
+val wxpusherUid = localProps.getProperty("WXPUSHER_UID") ?: ""
 
 android {
     namespace = "com.orangeway.iptv"
@@ -13,6 +25,11 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0.0"
+        // 问题反馈用的 GitHub Token（仅创建 Issue 权限），未配置时提交会提示失败
+        buildConfigField("String", "GITHUB_TOKEN", "\"$githubToken\"")
+        // 问题反馈用 WxPusher 微信推送配置，未配置时提交会提示失败
+        buildConfigField("String", "WXPUSHER_APPTOKEN", "\"$wxpusherAppToken\"")
+        buildConfigField("String", "WXPUSHER_UID", "\"$wxpusherUid\"")
     }
 
     buildTypes {
@@ -33,6 +50,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {

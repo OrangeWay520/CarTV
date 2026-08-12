@@ -1,5 +1,6 @@
 package com.orangeway.iptv.ui.screen
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,18 +25,22 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Feedback
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.Image
@@ -66,10 +71,16 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.flow.first
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.orangeway.iptv.BuildConfig
 import com.orangeway.iptv.R
+import com.orangeway.iptv.data.Updater
+import com.orangeway.iptv.data.UpdateState
 import com.orangeway.iptv.data.model.RegionProvider
 import com.orangeway.iptv.data.repository.RegionEntry
 import com.orangeway.iptv.data.repository.SettingsRepository
@@ -77,7 +88,7 @@ import com.orangeway.iptv.ui.theme.ThemeMode
 import kotlinx.coroutines.launch
 
 private enum class SettingsPage {
-    MAIN, PLAYLIST, REGION_PROVINCE, REGION_CITY, CATEGORY_FILTER, THEME, DECODER, ABOUT
+    MAIN, PLAYLIST, REGION_PROVINCE, REGION_CITY, CATEGORY_FILTER, THEME, DECODER, ABOUT, FEEDBACK
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -85,6 +96,7 @@ private enum class SettingsPage {
 fun SettingsScreen(
     settingsRepository: SettingsRepository,
     homeViewModel: HomeViewModel,
+    updater: Updater,
     onNavigateBack: () -> Unit,
     initialPage: String = "MAIN"
 ) {
@@ -172,6 +184,7 @@ fun SettingsScreen(
         SettingsPage.THEME -> "主题设置"
         SettingsPage.DECODER -> "解码模式"
         SettingsPage.ABOUT -> "关于"
+        SettingsPage.FEEDBACK -> "问题反馈"
     }
 
     Scaffold(
@@ -208,7 +221,8 @@ fun SettingsScreen(
                 onCategoryFilterClick = { currentPage = SettingsPage.CATEGORY_FILTER },
                 onThemeClick = { currentPage = SettingsPage.THEME },
                 onDecoderClick = { currentPage = SettingsPage.DECODER },
-                onAboutClick = { currentPage = SettingsPage.ABOUT }
+                onAboutClick = { currentPage = SettingsPage.ABOUT },
+                onFeedbackClick = { currentPage = SettingsPage.FEEDBACK }
             )
             SettingsPage.PLAYLIST -> PlaylistSettingsPage(
                 modifier = Modifier.padding(padding),
@@ -302,7 +316,8 @@ fun SettingsScreen(
                 modifier = Modifier.padding(padding),
                 settingsRepository = settingsRepository
             )
-            SettingsPage.ABOUT -> AboutPage(modifier = Modifier.padding(padding))
+            SettingsPage.ABOUT -> AboutPage(modifier = Modifier.padding(padding), updater = updater)
+            SettingsPage.FEEDBACK -> FeedbackPage(modifier = Modifier.padding(padding))
         }
     }
 }
@@ -317,7 +332,8 @@ private fun MainMenuPage(
     onCategoryFilterClick: () -> Unit,
     onThemeClick: () -> Unit,
     onDecoderClick: () -> Unit,
-    onAboutClick: () -> Unit
+    onAboutClick: () -> Unit,
+    onFeedbackClick: () -> Unit
 ) {
     val regionSubtitle = if (regionMap.isNotEmpty()) {
         "当前: " + regionMap.entries.joinToString(", ") { (province, entry) ->
@@ -366,6 +382,12 @@ private fun MainMenuPage(
             title = "解码模式",
             subtitle = "切换硬件/软件解码方式",
             onClick = onDecoderClick
+        )
+        MenuCard(
+            icon = Icons.Default.Feedback,
+            title = "问题反馈",
+            subtitle = "反馈使用中遇到的问题",
+            onClick = onFeedbackClick
         )
         MenuCard(
             icon = Icons.Default.Info,
@@ -1224,7 +1246,21 @@ private fun DecoderSelectionPage(
 }
 
 @Composable
-private fun AboutPage(modifier: Modifier) {
+private fun AboutPage(modifier: Modifier, updater: Updater) {
+    val context = LocalContext.current
+    var showDonateDialog by remember { mutableStateOf(false) }
+
+    // 检查结果轻提示（无更新 / 失败），不弹窗打扰
+    LaunchedEffect(updater.state) {
+        when (updater.state) {
+            UpdateState.NoUpdate ->
+                Toast.makeText(context, "当前已是最新版本 ${BuildConfig.VERSION_NAME}", Toast.LENGTH_SHORT).show()
+            UpdateState.Error ->
+                Toast.makeText(context, "检查更新失败，请检查网络", Toast.LENGTH_SHORT).show()
+            else -> Unit
+        }
+    }
+
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState())
@@ -1260,10 +1296,88 @@ private fun AboutPage(modifier: Modifier) {
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text = "v1.0.0",
+            text = "v${BuildConfig.VERSION_NAME}",
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+
+        Spacer(Modifier.height(20.dp))
+
+        // 检查更新入口
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .clickable { updater.check() },
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.SystemUpdate,
+                    contentDescription = "检查更新",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = if (updater.state == UpdateState.Checking) "正在检查更新…" else "检查更新",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.weight(1f))
+                if (updater.state == UpdateState.Checking) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        // 与下方卡片保持恰当间距
+        Spacer(Modifier.height(12.dp))
+
+        // 投喂作者入口
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .clickable { showDonateDialog = true },
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.VolunteerActivism,
+                    contentDescription = "投喂作者",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = "投喂作者",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.weight(1f))
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        // 更新对话框已由 MainActivity 全局挂载，此处不再重复创建
 
         Spacer(Modifier.height(32.dp))
 
@@ -1275,7 +1389,7 @@ private fun AboutPage(modifier: Modifier) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 AboutRow("应用名称", "橙子网络电视")
                 HorizontalDivider()
-                AboutRow("版本号", "1.0.0")
+                AboutRow("版本号", BuildConfig.VERSION_NAME)
                 HorizontalDivider()
                 AboutRow("应用类型", "车机 / 大屏网络电视直播播放器")
                 HorizontalDivider()
@@ -1314,6 +1428,45 @@ private fun AboutPage(modifier: Modifier) {
         )
 
         Spacer(Modifier.height(32.dp))
+    }
+
+    // 赞赏二维码弹窗（按当前实际主题明暗切换二维码图片）
+    if (showDonateDialog) {
+        val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+        AlertDialog(
+            onDismissRequest = { showDonateDialog = false },
+            title = {
+                Text(
+                    text = "投喂本喵~",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Image(
+                        painter = painterResource(
+                            id = if (isDark) R.drawable.donate_dark else R.drawable.donate_light
+                        ),
+                        contentDescription = "赞赏二维码",
+                        modifier = Modifier.size(260.dp)
+                    )
+                    Text(
+                        text = "随缘投喂喵~赏喵喵一个罐罐能让喵喵开心好久哦~",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showDonateDialog = false }) { Text("关闭") }
+            }
+        )
     }
 }
 
