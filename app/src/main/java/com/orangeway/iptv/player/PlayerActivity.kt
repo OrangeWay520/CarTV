@@ -191,14 +191,15 @@ class PlayerActivity : ComponentActivity() {
         )
 
         // 返回键 - 使用现代矢量图标
+        // 高度与标题列对齐(MATCH_PARENT)，宽度加大并缩小 padding 使圆形背景完整显示
         val backBtn = ImageView(this).apply {
             setImageResource(R.drawable.ic_back_arrow)
-            setPadding(20, 0, 20, 0)
+            setPadding(12, 0, 12, 0)
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             setOnClickListener { finish() }
         }
         val backLayout = LinearLayout.LayoutParams(
-            48.toPx(), 48.toPx()
+            56.toPx(), LinearLayout.LayoutParams.MATCH_PARENT
         ).apply {
             gravity = Gravity.CENTER
         }
@@ -226,7 +227,7 @@ class PlayerActivity : ComponentActivity() {
             addView(epgText)
         }
 
-        // 收藏键（星星，右上角）
+        // 收藏键（星星，右上角）：高度与标题列对齐(MATCH_PARENT)
         favoriteBtn = ImageView(this).apply {
             setImageResource(R.drawable.ic_star_outline)
             setPadding(12, 0, 12, 0)
@@ -234,7 +235,7 @@ class PlayerActivity : ComponentActivity() {
             setOnClickListener { toggleFavorite() }
         }
         val favoriteLayout = LinearLayout.LayoutParams(
-            48.toPx(), 48.toPx()
+            48.toPx(), LinearLayout.LayoutParams.MATCH_PARENT
         ).apply {
             gravity = Gravity.CENTER
             marginStart = 8.toPx()
