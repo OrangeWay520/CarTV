@@ -1398,12 +1398,14 @@ private fun AboutPage(modifier: Modifier, updater: Updater) {
                 AboutRow(
                     "核心功能",
                     "• 多源聚合播放，失效自动切换\n" +
+                        "• 频道收藏（播放器一键收藏，首页专属分类）\n" +
                         "• 支持 M3U / TXT 播放列表及双源合并\n" +
                         "• 台标缓存 + 加载超时兜底\n" +
                         "• 节目预告（EPG 电子节目单）\n" +
                         "• 地区筛选（省份 / 城市）\n" +
                         "• 频道分类自定义显示\n" +
                         "• 硬件 / 软件解码切换\n" +
+                        "• 适配比亚迪 DiLink 三七分屏\n" +
                         "• 浅色 / 深色 / 跟随系统主题"
                 )
                 HorizontalDivider()
