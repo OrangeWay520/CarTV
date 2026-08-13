@@ -189,18 +189,13 @@ class HomeViewModel(
         val currentCategory = _uiState.value.selectedCategory
         val newCategory = if (currentCategory in displayCategories) currentCategory else displayCategories.firstOrNull()
 
-        // 选中"收藏频道"时：仅显示当前播放列表中已收藏的频道
-        val displayChannels = if (newCategory == FAVORITE_CATEGORY) {
-            allChannels.filter { it.name in favoriteSet }
-        } else {
-            filteredChannels
-        }
-
         // 构建地区筛选描述
         val regionDesc = buildRegionDescription(filter.regionMap)
 
+        // channels 始终为全量已过滤列表（各分类共用），
+        // 展示层(HomeScreen)再按选中分类/收藏集合过滤，避免切换分类时丢失或残留频道
         _uiState.value = _uiState.value.copy(
-            channels = displayChannels,
+            channels = filteredChannels,
             categories = displayCategories,
             allCategories = allCategories,
             selectedCategory = newCategory,
@@ -231,18 +226,9 @@ class HomeViewModel(
     }
 
     fun selectCategory(category: String) {
-        val current = _uiState.value
-        if (category == FAVORITE_CATEGORY) {
-            // "收藏频道"是虚拟分类：选中时即时计算展示列表（仅收藏频道），
-            // 否则 HomeScreen 会拿到上一次 applyFilter 的全量列表导致显示所有频道
-            val favoriteSet = current.favoriteChannels.toSet()
-            _uiState.value = current.copy(
-                selectedCategory = category,
-                channels = rawChannels.filter { it.name in favoriteSet }
-            )
-        } else {
-            _uiState.value = current.copy(selectedCategory = category)
-        }
+        // channels 恒为全量已过滤列表，展示层(HomeScreen)负责按分类/收藏过滤，
+        // 这里只切换选中分类，避免污染列表导致切回普通分类时丢失频道
+        _uiState.value = _uiState.value.copy(selectedCategory = category)
     }
 
     /**
