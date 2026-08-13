@@ -101,13 +101,20 @@ class PlayerActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        // 多窗口/分屏模式下不锁定方向，允许系统自由调整窗口尺寸；
+        // 全屏模式锁定横屏以获得最佳观看体验
+        if (!isInMultiWindowMode) {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        }
 
-        // 沉浸式全屏（隐藏状态栏/导航栏），兼容 API 23+（替代废弃的 systemUiVisibility）
-        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-        windowInsetsController.systemBarsBehavior =
-            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
+        // 沉浸式全屏（隐藏状态栏/导航栏），仅全屏模式生效；
+        // 分屏模式下系统接管窗口装饰，不强制隐藏系统栏以避免冲突
+        if (!isInMultiWindowMode) {
+            val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+            windowInsetsController.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
+        }
 
         channelName = intent.getStringExtra("channel_name") ?: "未知频道"
         val urlsJson = intent.getStringExtra("channel_urls") ?: ""
@@ -813,6 +820,16 @@ class PlayerActivity : ComponentActivity() {
             } catch (_: Exception) {}
         }
         return if (singleUrl.isNotBlank()) listOf(singleUrl) else emptyList()
+    }
+
+    /**
+     * 分屏/窗口尺寸变化时重新计算画面比例
+     * configChanges 已在 Manifest 中声明 screenSize|screenLayout，Activity 不会重建
+     */
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // 分屏窗口尺寸变化后，重新应用画面比例以适配新的可用区域
+        applyAspectRatio(currentAspectRatio)
     }
 
     override fun onPause() { super.onPause(); player?.pause() }
