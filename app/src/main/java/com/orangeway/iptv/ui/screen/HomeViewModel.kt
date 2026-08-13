@@ -231,7 +231,18 @@ class HomeViewModel(
     }
 
     fun selectCategory(category: String) {
-        _uiState.value = _uiState.value.copy(selectedCategory = category)
+        val current = _uiState.value
+        if (category == FAVORITE_CATEGORY) {
+            // "收藏频道"是虚拟分类：选中时即时计算展示列表（仅收藏频道），
+            // 否则 HomeScreen 会拿到上一次 applyFilter 的全量列表导致显示所有频道
+            val favoriteSet = current.favoriteChannels.toSet()
+            _uiState.value = current.copy(
+                selectedCategory = category,
+                channels = rawChannels.filter { it.name in favoriteSet }
+            )
+        } else {
+            _uiState.value = current.copy(selectedCategory = category)
+        }
     }
 
     /**

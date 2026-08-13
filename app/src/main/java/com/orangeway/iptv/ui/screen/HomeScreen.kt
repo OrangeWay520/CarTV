@@ -339,9 +339,14 @@ fun HomeScreen(
                                         }
                                     }
                                 }
-                                // "收藏频道"是虚拟分类：ViewModel 已返回收藏列表，无需按真实分类过滤
+                                // "收藏频道"是虚拟分类：ViewModel 已返回收藏列表，无需按真实分类过滤；
+                                // 此处再按收藏列表过滤一次兜底，防止显示层拿到全量列表
                                 uiState.selectedCategory != null &&
-                                    uiState.selectedCategory != HomeViewModel.FAVORITE_CATEGORY -> {
+                                    uiState.selectedCategory == HomeViewModel.FAVORITE_CATEGORY -> {
+                                    val favoriteSet = uiState.favoriteChannels.toSet()
+                                    uiState.channels.filter { it.name in favoriteSet }
+                                }
+                                uiState.selectedCategory != null -> {
                                     uiState.channels.filter { it.category == uiState.selectedCategory }
                                 }
                                 else -> uiState.channels

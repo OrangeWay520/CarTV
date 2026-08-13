@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayCircle
@@ -27,7 +26,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -138,25 +136,17 @@ fun ChannelCard(
                 )
             }
 
-            // 已收藏的频道：右上角显示星星角标
+            // 已收藏的频道：右上角显示星星角标（无背景无阴影）
             if (isFavorite) {
-                Surface(
+                Icon(
+                    imageVector = Icons.Filled.Star,
+                    contentDescription = "已收藏",
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(6.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
-                    tonalElevation = 2.dp
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Star,
-                        contentDescription = "已收藏",
-                        modifier = Modifier
-                            .padding(4.dp)
-                            .size(14.dp),
-                        tint = Color(0xFFFFC107)
-                    )
-                }
+                        .padding(6.dp)
+                        .size(14.dp),
+                    tint = Color(0xFFFFC107)
+                )
             }
         }
     }

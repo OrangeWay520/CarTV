@@ -229,7 +229,7 @@ class PlayerActivity : ComponentActivity() {
         // 收藏键（星星，右上角）
         favoriteBtn = ImageView(this).apply {
             setImageResource(R.drawable.ic_star_outline)
-            setPadding(20, 0, 20, 0)
+            setPadding(12, 0, 12, 0)
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             setOnClickListener { toggleFavorite() }
         }
