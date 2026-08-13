@@ -46,6 +46,7 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.orangeway.iptv.data.model.EpgProgramme
 import com.orangeway.iptv.data.repository.EpgRepository
+import com.orangeway.iptv.data.repository.SettingsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -67,6 +68,11 @@ class PlayerActivity : ComponentActivity() {
     private var currentUrlIndex = 0
     private var urls: List<String> = emptyList()
     private var channelName: String = ""
+
+    // 收藏功能
+    private var isFavorite = false
+    private var favoriteBtn: ImageView? = null
+    private val settingsRepository by lazy { SettingsRepository(applicationContext) }
 
     // 播放卡顿监控：缓冲过久自动切换下一个源
     private var stallJob: Job? = null
@@ -149,6 +155,30 @@ class PlayerActivity : ComponentActivity() {
 
         // 加载节目预告
         loadEpg()
+
+        // 加载收藏状态
+        lifecycleScope.launch {
+            isFavorite = settingsRepository.isChannelFavorite(channelName)
+            favoriteBtn?.setImageResource(
+                if (isFavorite) R.drawable.ic_star_filled else R.drawable.ic_star_outline
+            )
+        }
+    }
+
+    /** 切换当前频道的收藏状态 */
+    private fun toggleFavorite() {
+        isFavorite = !isFavorite
+        favoriteBtn?.setImageResource(
+            if (isFavorite) R.drawable.ic_star_filled else R.drawable.ic_star_outline
+        )
+        Toast.makeText(
+            this,
+            if (isFavorite) "已收藏：$channelName" else "已取消收藏：$channelName",
+            Toast.LENGTH_SHORT
+        ).show()
+        lifecycleScope.launch {
+            settingsRepository.saveFavoriteChannel(channelName, isFavorite)
+        }
     }
 
     // ========== 顶部渐变条 ==========
@@ -196,14 +226,29 @@ class PlayerActivity : ComponentActivity() {
             addView(epgText)
         }
 
+        // 收藏键（星星，右上角）
+        favoriteBtn = ImageView(this).apply {
+            setImageResource(R.drawable.ic_star_outline)
+            setPadding(20, 0, 20, 0)
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+            setOnClickListener { toggleFavorite() }
+        }
+        val favoriteLayout = LinearLayout.LayoutParams(
+            48.toPx(), 48.toPx()
+        ).apply {
+            gravity = Gravity.CENTER
+            marginStart = 8.toPx()
+        }
+
         val topRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(12, 24, 24, 0)
+            setPadding(12, 24, 12, 0)
             addView(backBtn, backLayout)
             addView(titleColumn, LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f
             ))
+            addView(favoriteBtn, favoriteLayout)
         }
 
         topBar = FrameLayout(this).apply {

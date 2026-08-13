@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -59,6 +61,7 @@ import kotlin.time.Duration.Companion.milliseconds
 fun ChannelCard(
     channel: Channel,
     onClick: () -> Unit,
+    isFavorite: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -135,21 +138,23 @@ fun ChannelCard(
                 )
             }
 
-            // 备用地址数量角标
-            if (channel.allUrls.size > 1) {
+            // 已收藏的频道：右上角显示星星角标
+            if (isFavorite) {
                 Surface(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(4.dp),
+                        .padding(6.dp),
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
                     tonalElevation = 2.dp
                 ) {
-                    Text(
-                        text = "${channel.allUrls.size}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = "已收藏",
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .size(14.dp),
+                        tint = Color(0xFFFFC107)
                     )
                 }
             }

@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.orangeway.iptv.ui.theme.ThemeMode
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -34,6 +35,7 @@ class SettingsRepository(private val context: Context) {
         private val DECODER_MODE_KEY = stringPreferencesKey("decoder_mode")
         private val MERGE_TXT_KEY = booleanPreferencesKey("merge_txt_enabled")
         private val MERGE_TXT_URL_KEY = stringPreferencesKey("merge_txt_url")
+        private val FAVORITE_CHANNELS_KEY = stringPreferencesKey("favorite_channels")
 
         // 默认使用用户自建的聚合播放列表（多源、自动更新，经 gh-proxy 加速）
         // 也可部署 iptv-api (https://github.com/Guovin/iptv-api) 后填自己的地址
@@ -139,6 +141,29 @@ class SettingsRepository(private val context: Context) {
     suspend fun saveMergeTxtUrl(url: String) {
         context.dataStore.edit { preferences ->
             preferences[MERGE_TXT_URL_KEY] = url
+        }
+    }
+
+    /** 已收藏的频道名称列表（逗号分隔） */
+    val favoriteChannels: Flow<List<String>> = context.dataStore.data.map { preferences ->
+        preferences[FAVORITE_CHANNELS_KEY]?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+    }
+
+    /** 判断指定频道是否已被收藏 */
+    suspend fun isChannelFavorite(name: String): Boolean {
+        return favoriteChannels.first().contains(name)
+    }
+
+    /** 收藏或取消收藏指定频道 */
+    suspend fun saveFavoriteChannel(name: String, favorite: Boolean) {
+        val current = favoriteChannels.first().toMutableSet()
+        if (favorite) {
+            current.add(name)
+        } else {
+            current.remove(name)
+        }
+        context.dataStore.edit { preferences ->
+            preferences[FAVORITE_CHANNELS_KEY] = current.joinToString(",")
         }
     }
 

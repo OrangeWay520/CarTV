@@ -31,7 +31,9 @@ data class HomeUiState(
     /** 是否已设置地区筛选 */
     val hasRegionFilter: Boolean = false,
     /** 当前隐藏的分类 */
-    val hiddenCategories: List<String> = emptyList()
+    val hiddenCategories: List<String> = emptyList(),
+    /** 已收藏的频道名称列表 */
+    val favoriteChannels: List<String> = emptyList()
 )
 
 class HomeViewModel(
@@ -39,6 +41,11 @@ class HomeViewModel(
     private val settingsRepository: SettingsRepository,
     private val epgRepository: EpgRepository
 ) : ViewModel() {
+
+    companion object {
+        /** 虚拟分类：收藏频道（置顶显示） */
+        const val FAVORITE_CATEGORY = "收藏频道"
+    }
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -55,13 +62,14 @@ class HomeViewModel(
             }
         }
 
-        // 监听地区设置和隐藏分类变化，重新筛选
+        // 监听地区设置、隐藏分类和收藏列表变化，重新筛选
         viewModelScope.launch {
             combine(
                 settingsRepository.regionData,
-                settingsRepository.hiddenCategories
-            ) { regionMap, hidden ->
-                FilterSettings(regionMap, hidden)
+                settingsRepository.hiddenCategories,
+                settingsRepository.favoriteChannels
+            ) { regionMap, hidden, favorites ->
+                FilterSettings(regionMap, hidden, favorites)
             }.collect { filter ->
                 applyFilter(rawChannels, filter)
             }
@@ -78,7 +86,8 @@ class HomeViewModel(
                 rawChannels = list
                 val regionMap = settingsRepository.regionData.first()
                 val hidden = settingsRepository.hiddenCategories.first()
-                applyFilter(list, FilterSettings(regionMap, hidden))
+                val favorites = settingsRepository.favoriteChannels.first()
+                applyFilter(list, FilterSettings(regionMap, hidden, favorites))
                 // 异步加载当前节目并填充到频道卡片
                 attachEpgPrograms(list)
             }.onFailure { e ->
@@ -108,7 +117,8 @@ class HomeViewModel(
             // 重新应用筛选（地区 + 隐藏分类），并保持当前选中分类不变
             val regionMap = settingsRepository.regionData.first()
             val hidden = settingsRepository.hiddenCategories.first()
-            applyFilter(updated, FilterSettings(regionMap, hidden))
+            val favorites = settingsRepository.favoriteChannels.first()
+            applyFilter(updated, FilterSettings(regionMap, hidden, favorites))
         }
     }
 
@@ -117,7 +127,8 @@ class HomeViewModel(
      */
     private data class FilterSettings(
         val regionMap: Map<String, RegionEntry>,
-        val hiddenCategoriesStr: String
+        val hiddenCategoriesStr: String,
+        val favoriteChannels: List<String>
     )
 
     /**
@@ -167,23 +178,38 @@ class HomeViewModel(
             regionFiltered.filter { it.category !in hiddenList }
         }
 
+        // 3. 收藏频道虚拟分类：置顶显示（不受地区/隐藏分类影响）
+        val favoriteSet = filter.favoriteChannels.toSet()
+        val hasFavorites = allChannels.any { it.name in favoriteSet }
         val categories = filteredChannels.map { it.category }.distinct().filter { it.isNotBlank() }
+        val displayCategories = buildList {
+            if (hasFavorites) add(FAVORITE_CATEGORY)
+            addAll(categories)
+        }
         val currentCategory = _uiState.value.selectedCategory
-        val newCategory = if (currentCategory in categories) currentCategory else categories.firstOrNull()
+        val newCategory = if (currentCategory in displayCategories) currentCategory else displayCategories.firstOrNull()
+
+        // 选中"收藏频道"时：仅显示当前播放列表中已收藏的频道
+        val displayChannels = if (newCategory == FAVORITE_CATEGORY) {
+            allChannels.filter { it.name in favoriteSet }
+        } else {
+            filteredChannels
+        }
 
         // 构建地区筛选描述
         val regionDesc = buildRegionDescription(filter.regionMap)
 
         _uiState.value = _uiState.value.copy(
-            channels = filteredChannels,
-            categories = categories,
+            channels = displayChannels,
+            categories = displayCategories,
             allCategories = allCategories,
             selectedCategory = newCategory,
             isLoading = false,
             errorMessage = null,
             regionFilter = regionDesc,
             hasRegionFilter = filter.regionMap.isNotEmpty(),
-            hiddenCategories = hiddenList
+            hiddenCategories = hiddenList,
+            favoriteChannels = filter.favoriteChannels
         )
     }
 

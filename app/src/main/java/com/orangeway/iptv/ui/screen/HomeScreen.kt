@@ -339,7 +339,9 @@ fun HomeScreen(
                                         }
                                     }
                                 }
-                                uiState.selectedCategory != null -> {
+                                // "收藏频道"是虚拟分类：ViewModel 已返回收藏列表，无需按真实分类过滤
+                                uiState.selectedCategory != null &&
+                                    uiState.selectedCategory != HomeViewModel.FAVORITE_CATEGORY -> {
                                     uiState.channels.filter { it.category == uiState.selectedCategory }
                                 }
                                 else -> uiState.channels
@@ -355,6 +357,7 @@ fun HomeScreen(
                                 items(filteredChannels, key = { it.name }) { channel ->
                                     ChannelCard(
                                         channel = channel,
+                                        isFavorite = channel.name in uiState.favoriteChannels,
                                         onClick = { onNavigateToPlayer(channel) }
                                     )
                                 }
