@@ -39,6 +39,7 @@ sealed interface UpdateState {
     data object Checking : UpdateState
     data class Found(val info: UpdateInfo) : UpdateState
     data class Downloading(val info: UpdateInfo, val progress: Int) : UpdateState
+    data class Downloaded(val info: UpdateInfo) : UpdateState
     data class DownloadError(val info: UpdateInfo) : UpdateState
     data object NoUpdate : UpdateState
     data object Error : UpdateState
@@ -216,8 +217,11 @@ class Updater(
                 val file = UpdateManager(appContext).downloadApk(info) { progress ->
                     state = UpdateState.Downloading(info, progress)
                 }
+                // 先显示"下载完成"状态，保持对话框不关闭
+                state = UpdateState.Downloaded(info)
+                // 短暂延迟确保 UI 更新到 100%，再调起系统安装界面
+                kotlinx.coroutines.delay(500)
                 UpdateManager(appContext).installApk(file)
-                state = UpdateState.Idle
             } catch (_: Exception) {
                 state = UpdateState.DownloadError(info)
             }
