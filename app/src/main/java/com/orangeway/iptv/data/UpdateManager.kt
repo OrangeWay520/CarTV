@@ -207,7 +207,7 @@ class Updater(
             state = when (result) {
                 is UpdateResult.Latest -> UpdateState.Found(result.info)
                 UpdateResult.NoUpdate -> {
-                    // 没有新版本发布，但可能之前已下载过 APK，检查本地文件
+                    // 没有新版本发布，但可能之前已下载过 APK，检查本地文件（只认比当前版本新的）
                     val file = findDownloadedApk()
                     if (file != null) {
                         val info = pendingInfo ?: UpdateInfo(
@@ -260,13 +260,36 @@ class Updater(
         }
     }
 
-    /** 查找已下载的 APK 文件：优先 pendingFile，其次扫描外部目录 */
+    /** 查找已下载且比当前安装版本新的 APK；已安装过的旧 APK 会被清理 */
     private fun findDownloadedApk(): File? {
-        pendingFile?.let { if (it.exists()) return it }
+        val current = BuildConfig.VERSION_NAME
+        val check = { file: File ->
+            val fileVer = file.name.removePrefix("update_").removeSuffix(".apk")
+            // 已下载版本不高于当前安装版本 → 说明已装过，删除并忽略
+            if (isNewerVersion(fileVer, current)) {
+                file.takeIf { it.exists() }
+            } else {
+                file.delete()
+                null
+            }
+        }
+        pendingFile?.let { return check(it) }
         val dir = appContext.getExternalFilesDir(null) ?: return null
         val files = dir.listFiles { f -> f.name.startsWith("update_") && f.name.endsWith(".apk") }
             ?: return null
-        // 返回最新的 APK 文件
-        return files.maxByOrNull { it.lastModified() }?.takeIf { it.exists() }
+        return files.sortedByDescending { it.lastModified() }.firstNotNullOfOrNull(check)
+    }
+
+    /** 判断 a 版本是否高于 b 版本 */
+    private fun isNewerVersion(a: String, b: String): Boolean {
+        val an = a.split('.').mapNotNull { it.toIntOrNull() }
+        val bn = b.split('.').mapNotNull { it.toIntOrNull() }
+        val len = maxOf(an.size, bn.size)
+        for (i in 0 until len) {
+            val x = an.getOrElse(i) { 0 }
+            val y = bn.getOrElse(i) { 0 }
+            if (x != y) return x > y
+        }
+        return false
     }
 }
