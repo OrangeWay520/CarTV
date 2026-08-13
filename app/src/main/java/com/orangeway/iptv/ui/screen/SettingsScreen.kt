@@ -466,7 +466,7 @@ private fun PlaylistSettingsPage(
             onDismissRequest = { showResetDialog = false },
             title = {
                 Text(
-                    text = "恢复默认播放列表",
+                    text = "恢复默认",
                     fontWeight = FontWeight.Bold
                 )
             },
@@ -683,7 +683,7 @@ private fun PlaylistSettingsPage(
                     contentColor = MaterialTheme.colorScheme.onSurface
                 )
             ) {
-                Text("恢复默认播放列表", style = MaterialTheme.typography.titleSmall)
+                Text("恢复默认", style = MaterialTheme.typography.titleSmall)
             }
         }
     }
@@ -830,7 +830,7 @@ private fun ProvinceSelectionPage(
                     contentColor = MaterialTheme.colorScheme.onSurface
                 )
             ) {
-                Text("清除所有地区筛选")
+                Text("清除筛选")
             }
             Button(
                 onClick = onDone,

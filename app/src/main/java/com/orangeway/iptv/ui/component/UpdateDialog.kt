@@ -70,16 +70,20 @@ fun UpdateDialog(updater: Updater) {
         )
 
         is UpdateState.Downloaded -> AlertDialog(
-            onDismissRequest = { },
-            title = { Text("下载完成") },
+            onDismissRequest = { updater.dismiss() },
+            title = { Text("新版本 ${s.info.versionName} 下载完成") },
             text = {
                 Text(
-                    text = "更新包已下载完成，正在启动系统安装界面…\n如果未弹出安装提示，请在系统设置中允许「安装未知应用」。",
+                    text = "更新包已下载完成，可立即安装或稍后安装。\n如果安装未弹出，请在系统设置中允许「安装未知应用」。",
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
-            confirmButton = { },
-            dismissButton = { }
+            confirmButton = {
+                Button(onClick = { updater.install() }) { Text("安装") }
+            },
+            dismissButton = {
+                TextButton(onClick = { updater.dismiss() }) { Text("稍后再说") }
+            }
         )
 
         is UpdateState.DownloadError -> AlertDialog(

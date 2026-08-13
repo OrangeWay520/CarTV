@@ -311,7 +311,7 @@ fun HomeScreen(
                         }
                         Spacer(Modifier.height(12.dp))
                         OutlinedButton(onClick = { viewModel.resetToDefaultUrl() }) {
-                            Text("恢复默认播放列表")
+                            Text("恢复默认")
                         }
                     }
                 }

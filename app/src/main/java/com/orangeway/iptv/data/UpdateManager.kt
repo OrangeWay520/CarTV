@@ -39,7 +39,7 @@ sealed interface UpdateState {
     data object Checking : UpdateState
     data class Found(val info: UpdateInfo) : UpdateState
     data class Downloading(val info: UpdateInfo, val progress: Int) : UpdateState
-    data class Downloaded(val info: UpdateInfo) : UpdateState
+    data class Downloaded(val info: UpdateInfo, val file: java.io.File) : UpdateState
     data class DownloadError(val info: UpdateInfo) : UpdateState
     data object NoUpdate : UpdateState
     data object Error : UpdateState
@@ -194,14 +194,32 @@ class Updater(
     var state by mutableStateOf<UpdateState>(UpdateState.Idle)
         private set
 
+    /** 已下载但未安装的 APK 文件（跨会话保留，用于"稍后安装"） */
+    private var pendingFile: File? = null
+    private var pendingInfo: UpdateInfo? = null
+
     fun check() {
-        // 检查中/下载中忽略重复触发；检查完成后（无更新/失败）允许再次检查
+        // 检查中/下载中忽略重复触发
         if (state == UpdateState.Checking || state is UpdateState.Downloading) return
         state = UpdateState.Checking
         scope.launch {
-            state = when (val result = UpdateManager(appContext).checkUpdate()) {
+            val result = UpdateManager(appContext).checkUpdate()
+            state = when (result) {
                 is UpdateResult.Latest -> UpdateState.Found(result.info)
-                UpdateResult.NoUpdate -> UpdateState.NoUpdate
+                UpdateResult.NoUpdate -> {
+                    // 没有新版本发布，但可能之前已下载过 APK，检查本地文件
+                    val file = findDownloadedApk()
+                    if (file != null) {
+                        val info = pendingInfo ?: UpdateInfo(
+                            versionName = file.name.removePrefix("update_").removeSuffix(".apk"),
+                            changelog = "",
+                            apkUrl = ""
+                        )
+                        UpdateState.Downloaded(info, file)
+                    } else {
+                        UpdateState.NoUpdate
+                    }
+                }
                 UpdateResult.Error -> UpdateState.Error
             }
         }
@@ -217,20 +235,38 @@ class Updater(
                 val file = UpdateManager(appContext).downloadApk(info) { progress ->
                     state = UpdateState.Downloading(info, progress)
                 }
-                // 先显示"下载完成"状态，保持对话框不关闭
-                state = UpdateState.Downloaded(info)
-                // 短暂延迟确保 UI 更新到 100%，再调起系统安装界面
-                kotlinx.coroutines.delay(500)
-                UpdateManager(appContext).installApk(file)
+                // 下载完成，保存到 pending 供稍后安装
+                pendingFile = file
+                pendingInfo = info
+                state = UpdateState.Downloaded(info, file)
             } catch (_: Exception) {
                 state = UpdateState.DownloadError(info)
             }
         }
     }
 
+    /** 安装已下载的 APK */
+    fun install() {
+        val downloaded = state as? UpdateState.Downloaded ?: return
+        UpdateManager(appContext).installApk(downloaded.file)
+    }
+
     fun dismiss() {
-        if (state is UpdateState.Found || state is UpdateState.DownloadError) {
+        if (state is UpdateState.Found ||
+            state is UpdateState.DownloadError ||
+            state is UpdateState.Downloaded
+        ) {
             state = UpdateState.Idle
         }
+    }
+
+    /** 查找已下载的 APK 文件：优先 pendingFile，其次扫描外部目录 */
+    private fun findDownloadedApk(): File? {
+        pendingFile?.let { if (it.exists()) return it }
+        val dir = appContext.getExternalFilesDir(null) ?: return null
+        val files = dir.listFiles { f -> f.name.startsWith("update_") && f.name.endsWith(".apk") }
+            ?: return null
+        // 返回最新的 APK 文件
+        return files.maxByOrNull { it.lastModified() }?.takeIf { it.exists() }
     }
 }
