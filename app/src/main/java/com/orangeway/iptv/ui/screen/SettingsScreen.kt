@@ -1,6 +1,5 @@
 package com.orangeway.iptv.ui.screen
 
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -40,7 +39,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.Image
@@ -71,7 +69,6 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.flow.first
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
@@ -79,8 +76,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.orangeway.iptv.BuildConfig
 import com.orangeway.iptv.R
-import com.orangeway.iptv.data.Updater
-import com.orangeway.iptv.data.UpdateState
+import com.orangeway.iptv.data.UpdateCheck
 import com.orangeway.iptv.data.model.RegionProvider
 import com.orangeway.iptv.data.repository.RegionEntry
 import com.orangeway.iptv.data.repository.SettingsRepository
@@ -96,7 +92,7 @@ private enum class SettingsPage {
 fun SettingsScreen(
     settingsRepository: SettingsRepository,
     homeViewModel: HomeViewModel,
-    updater: Updater,
+    onCheckUpdateClick: () -> Unit,
     onNavigateBack: () -> Unit,
     initialPage: String = "MAIN"
 ) {
@@ -316,7 +312,10 @@ fun SettingsScreen(
                 modifier = Modifier.padding(padding),
                 settingsRepository = settingsRepository
             )
-            SettingsPage.ABOUT -> AboutPage(modifier = Modifier.padding(padding), updater = updater)
+            SettingsPage.ABOUT -> AboutPage(
+                modifier = Modifier.padding(padding),
+                onCheckUpdateClick = onCheckUpdateClick
+            )
             SettingsPage.FEEDBACK -> FeedbackPage(modifier = Modifier.padding(padding))
         }
     }
@@ -1246,20 +1245,8 @@ private fun DecoderSelectionPage(
 }
 
 @Composable
-private fun AboutPage(modifier: Modifier, updater: Updater) {
-    val context = LocalContext.current
+private fun AboutPage(modifier: Modifier, onCheckUpdateClick: () -> Unit) {
     var showDonateDialog by remember { mutableStateOf(false) }
-
-    // 检查结果轻提示（无更新 / 失败），不弹窗打扰
-    LaunchedEffect(updater.state) {
-        when (updater.state) {
-            UpdateState.NoUpdate ->
-                Toast.makeText(context, "当前已是最新版本 ${BuildConfig.VERSION_NAME}", Toast.LENGTH_SHORT).show()
-            UpdateState.Error ->
-                Toast.makeText(context, "检查更新失败，请检查网络", Toast.LENGTH_SHORT).show()
-            else -> Unit
-        }
-    }
 
     Column(
         modifier = modifier
@@ -1308,7 +1295,7 @@ private fun AboutPage(modifier: Modifier, updater: Updater) {
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .clickable { updater.check() },
+                .clickable { onCheckUpdateClick() },
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Row(
@@ -1322,22 +1309,27 @@ private fun AboutPage(modifier: Modifier, updater: Updater) {
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    text = if (updater.state == UpdateState.Checking) "正在检查更新…" else "检查更新",
+                    text = "检查更新",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(Modifier.weight(1f))
-                if (updater.state == UpdateState.Checking) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp
-                    )
-                } else {
+                Box {
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    // 有新版本可更新时，在箭头右上角点亮小红点
+                    if (UpdateCheck.hasUpdate) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.error)
+                        )
+                    }
                 }
             }
         }
@@ -1391,9 +1383,9 @@ private fun AboutPage(modifier: Modifier, updater: Updater) {
                 HorizontalDivider()
                 AboutRow("版本号", BuildConfig.VERSION_NAME)
                 HorizontalDivider()
-                AboutRow("应用类型", "车机 / 大屏网络电视直播播放器")
+                AboutRow("应用类型", "网络电视直播播放器")
                 HorizontalDivider()
-                AboutRow("应用描述", "面向车载场景的直播播放应用，聚合央视、卫视、地方、港澳台、少儿、体育、电影、音乐、纪录、付费等十大分类频道，点击即可一键播放，失效源自动切换，畅享稳定流畅的观看体验。")
+                AboutRow("应用描述", "面向安卓手机、平板、车机等设备的直播播放应用，聚合央视、卫视、地方、港澳台、少儿、体育、电影、音乐、纪录、付费等十大分类频道，点击即可一键播放，失效源自动切换，畅享稳定流畅的观看体验。")
                 HorizontalDivider()
                 AboutRow(
                     "核心功能",
@@ -1405,7 +1397,6 @@ private fun AboutPage(modifier: Modifier, updater: Updater) {
                         "• 地区筛选（省份 / 城市）\n" +
                         "• 频道分类自定义显示\n" +
                         "• 硬件 / 软件解码切换\n" +
-                        "• 适配比亚迪 DiLink 三七分屏\n" +
                         "• 浅色 / 深色 / 跟随系统主题"
                 )
                 HorizontalDivider()

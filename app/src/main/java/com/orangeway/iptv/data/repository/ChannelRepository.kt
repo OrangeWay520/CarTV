@@ -230,7 +230,7 @@ class ChannelRepository {
         return try {
             val request = Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", "OrangeIPTVCar/1.0")
+                .addHeader("User-Agent", "OrangeIPTV/1.0")
                 .build()
             val response = client.newCall(request).execute()
             if (response.isSuccessful) {

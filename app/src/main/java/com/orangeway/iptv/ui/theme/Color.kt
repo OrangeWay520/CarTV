@@ -2,7 +2,7 @@ package com.orangeway.iptv.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// 深色主题 - 车机夜间使用友好
+// 深色主题 - 夜间使用友好
 val DarkBackground = Color(0xFF0D1117)
 val DarkSurface = Color(0xFF161B22)
 val DarkSurfaceVariant = Color(0xFF21262D)

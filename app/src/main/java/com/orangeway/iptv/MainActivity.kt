@@ -9,21 +9,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.flow.first
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.orangeway.iptv.data.Updater
+import com.orangeway.iptv.data.UpdateCheck
 import com.orangeway.iptv.player.PlayerActivity
-import com.orangeway.iptv.ui.component.UpdateDialog
+import com.orangeway.iptv.ui.screen.CheckUpdatePage
 import com.orangeway.iptv.ui.screen.HomeScreen
 import com.orangeway.iptv.ui.screen.HomeViewModel
 import com.orangeway.iptv.ui.screen.SettingsScreen
-import com.orangeway.iptv.ui.theme.OrangeIPTVCarTheme
+import com.orangeway.iptv.ui.theme.OrangeIPTVTheme
 import com.orangeway.iptv.ui.theme.ThemeMode
 
 class MainActivity : ComponentActivity() {
@@ -32,31 +30,28 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val app = OrangeIPTVCarApp.instance
+            val app = OrangeIPTVApp.instance
             val themeMode by app.settingsRepository.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
 
-            OrangeIPTVCarTheme(themeMode = themeMode) {
-                OrangeIPTVCarNavigation()
+            OrangeIPTVTheme(themeMode = themeMode) {
+                OrangeIPTVNavigation()
             }
         }
     }
 }
 
 @Composable
-fun OrangeIPTVCarNavigation() {
+fun OrangeIPTVNavigation() {
     val navController = rememberNavController()
     val context = LocalContext.current
-    val app = OrangeIPTVCarApp.instance
+    val app = OrangeIPTVApp.instance
     val homeViewModel: HomeViewModel = viewModel(
         factory = HomeViewModel.Factory(app.channelRepository, app.settingsRepository, app.epgRepository)
     )
 
-    // 全局更新管理器：启动时自动检查一次；About 页手动检查复用同一实例
-    val scope = rememberCoroutineScope()
-    val updater = remember(context.applicationContext) {
-        Updater(context.applicationContext, scope)
-    }
-    LaunchedEffect(Unit) { updater.check() }
+    // 启动时自动检查一次，仅更新全局红点（首页「设置」图标与关于页「检查更新」入口角标），
+    // 不再自动弹更新对话框；用户进入「检查更新」二级页时由该页自行检查。
+    LaunchedEffect(context) { UpdateCheck.check(context.applicationContext) }
 
     NavHost(
         navController = navController,
@@ -97,7 +92,7 @@ fun OrangeIPTVCarNavigation() {
             SettingsScreen(
                 settingsRepository = app.settingsRepository,
                 homeViewModel = homeViewModel,
-                updater = updater,
+                onCheckUpdateClick = { navController.navigate("update") },
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -106,13 +101,17 @@ fun OrangeIPTVCarNavigation() {
             SettingsScreen(
                 settingsRepository = app.settingsRepository,
                 homeViewModel = homeViewModel,
-                updater = updater,
+                onCheckUpdateClick = { navController.navigate("update") },
                 onNavigateBack = { navController.popBackStack() },
                 initialPage = "PLAYLIST"
             )
         }
-    }
 
-    // 全局更新对话框（启动自动检查发现新版本时也会弹出）
-    UpdateDialog(updater)
+        composable("update") {
+            CheckUpdatePage(
+                settingsRepository = app.settingsRepository,
+                onBack = { navController.popBackStack() }
+            )
+        }
+    }
 }

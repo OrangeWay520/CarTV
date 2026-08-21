@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.orangeway.iptv.data.DownloadSource
 import com.orangeway.iptv.ui.theme.ThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -36,6 +37,7 @@ class SettingsRepository(private val context: Context) {
         private val MERGE_TXT_KEY = booleanPreferencesKey("merge_txt_enabled")
         private val MERGE_TXT_URL_KEY = stringPreferencesKey("merge_txt_url")
         private val FAVORITE_CHANNELS_KEY = stringPreferencesKey("favorite_channels")
+        private val DOWNLOAD_SOURCE_KEY = stringPreferencesKey("download_source")
 
         // 默认使用用户自建的聚合播放列表（多源、自动更新，经 gh-proxy 加速）
         // 也可部署 iptv-api (https://github.com/Guovin/iptv-api) 后填自己的地址
@@ -114,6 +116,17 @@ class SettingsRepository(private val context: Context) {
     /** 解码模式：auto=优先硬件解码（默认），software=优先软解码 */
     val decoderMode: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[DECODER_MODE_KEY] ?: "auto"
+    }
+
+    /** 用户选择的 APK 下载源（GitCode/Gitee/GitHub），默认 GitCode */
+    val downloadSource: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[DOWNLOAD_SOURCE_KEY] ?: DownloadSource.GITCODE.id
+    }
+
+    suspend fun saveDownloadSource(id: String) {
+        context.dataStore.edit { preferences ->
+            preferences[DOWNLOAD_SOURCE_KEY] = id
+        }
     }
 
     suspend fun saveDecoderMode(mode: String) {

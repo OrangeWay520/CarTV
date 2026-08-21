@@ -1,6 +1,6 @@
-# OrangeIPTV.Car（橙子网络电视）
+# OrangeIPTV（橙子网络电视）
 
-一款专为**车机 / Android 大屏**打造的 Android 网络电视直播应用，基于 Jetpack Compose 构建，界面现代美观、操作简单，支持触摸与遥控器双重交互。
+一款适配**安卓手机、平板、电视盒子、车机**等设备的 Android 网络电视直播应用，基于 Jetpack Compose 构建，界面现代美观、操作简单，支持触摸与遥控器双重交互。
 
 ## 功能特性
 
@@ -40,11 +40,10 @@
 - **频道分类筛选**：首页可隐藏不需要的分类，频道卡片高度统一（90dp）
 - 加载失败提供"重试 / 设置播放列表地址 / 恢复默认播放列表"三按钮恢复
 
-### 🚗 车机适配
-- 大图标、大字体，专为大屏触摸设计
-- 支持遥控器按键与触摸双重操作
+### 📱 多设备适配
+- 大图标、大字体，专为大屏与触摸设计
+- 支持遥控器按键与触摸双重操作，兼容多屏窗口尺寸自适应
 - 应用桌面图标使用专属橙色低多边形 Logo
-- **适配比亚迪 DiLink 三七分屏**：支持分屏模式下同时使用导航与应用，窗口尺寸变化时自动调整画面比例
 
 ## 技术栈
 
@@ -64,7 +63,7 @@
 
 ```
 app/src/main/java/com/orangeway/iptv/
-├── OrangeIPTVCarApp.kt          # Application 入口
+├── OrangeIPTVApp.kt            # Application 入口
 ├── MainActivity.kt              # 主入口 Activity
 ├── data/
 │   ├── model/                   # Channel、EpgProgramme、Region 数据模型
@@ -83,7 +82,7 @@ app/src/main/java/com/orangeway/iptv/
 - **JDK 17** 及以上
 - **Android Studio**（最新稳定版）
 - Android SDK：compileSdk **37**、minSdk 23、targetSdk 37
-- 支持 Android 6.0（API 23）+ 的 Android 设备 / 车机 / 电视盒子
+- 支持 Android 6.0（API 23）+ 的安卓手机 / 平板 / 电视盒子 / 车机等设备
 
 > 项目使用 Gradle Wrapper，首次构建会自动下载依赖。
 
@@ -101,7 +100,7 @@ app/src/main/java/com/orangeway/iptv/
 
 ## 使用说明
 
-1. **安装 APK** 到车机 / 电视盒子 / 手机。
+1. **安装 APK** 到安卓手机 / 平板 / 电视盒子 / 车机等设备。
 2. 打开应用即可看到频道列表，**点击频道卡片直接开始播放**。
 3. 默认播放列表为 vbskycn 镜像源（`https://live.zbds.top/tv/iptv4.m3u`）。
 4. 如需自定义播放列表，进入 **设置 → 播放列表地址** 填入你的 M3U/TXT 订阅地址。

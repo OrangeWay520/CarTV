@@ -37,10 +37,10 @@ object FeedbackManager {
 
     private const val WXPUSHER_API = "https://wxpusher.zjiecode.com/api/send/message"
     private const val GITHUB_API_MIRROR =
-        "https://gh.llkk.cc/https://api.github.com/repos/OrangeWay520/CarTV/issues"
+        "https://gh.llkk.cc/https://api.github.com/repos/OrangeWay520/OrangeIPTV/issues"
     private const val GITHUB_API_DIRECT =
-        "https://api.github.com/repos/OrangeWay520/CarTV/issues"
-    private const val USER_AGENT = "OrangeIPTVCar/1.0"
+        "https://api.github.com/repos/OrangeWay520/OrangeIPTV/issues"
+    private const val USER_AGENT = "OrangeIPTV/1.0"
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(8, TimeUnit.SECONDS)

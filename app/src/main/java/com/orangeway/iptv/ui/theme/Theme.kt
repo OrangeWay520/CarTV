@@ -51,7 +51,7 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun OrangeIPTVCarTheme(
+fun OrangeIPTVTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
     content: @Composable () -> Unit
 ) {
@@ -73,7 +73,7 @@ fun OrangeIPTVCarTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = OrangeIPTVCarTypography,
+        typography = OrangeIPTVTypography,
         content = content
     )
 }

@@ -9,7 +9,7 @@ import com.orangeway.iptv.data.repository.ChannelRepository
 import com.orangeway.iptv.data.repository.EpgRepository
 import com.orangeway.iptv.data.repository.SettingsRepository
 
-class OrangeIPTVCarApp : Application(), ImageLoaderFactory {
+class OrangeIPTVApp : Application(), ImageLoaderFactory {
 
     lateinit var settingsRepository: SettingsRepository
         private set
@@ -52,7 +52,7 @@ class OrangeIPTVCarApp : Application(), ImageLoaderFactory {
     }
 
     companion object {
-        lateinit var instance: OrangeIPTVCarApp
+        lateinit var instance: OrangeIPTVApp
             private set
     }
 }

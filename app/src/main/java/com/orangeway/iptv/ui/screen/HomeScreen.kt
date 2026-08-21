@@ -11,6 +11,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -68,6 +69,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -83,6 +85,7 @@ import androidx.compose.ui.unit.dp
 import coil.imageLoader
 import coil.request.ImageRequest
 import com.orangeway.iptv.R
+import com.orangeway.iptv.data.UpdateCheck
 import com.orangeway.iptv.data.model.Channel
 import com.orangeway.iptv.ui.component.ChannelCard
 import kotlinx.coroutines.Job
@@ -238,7 +241,19 @@ fun HomeScreen(
                             Icon(Icons.Default.Refresh, contentDescription = "刷新")
                         }
                         IconButton(onClick = onNavigateToSettings) {
-                            Icon(Icons.Default.Settings, contentDescription = "设置")
+                            Box {
+                                Icon(Icons.Default.Settings, contentDescription = "设置")
+                                // 有新版本可更新时，在设置图标右上角点亮小红点
+                                if (UpdateCheck.hasUpdate) {
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .size(8.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.error)
+                                    )
+                                }
+                            }
                         }
                     }
                 },

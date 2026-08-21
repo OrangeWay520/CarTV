@@ -703,7 +703,7 @@ class PlayerActivity : ComponentActivity() {
         player?.release()
 
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
-            .setUserAgent("OrangeIPTVCar/1.0")
+            .setUserAgent("OrangeIPTV/1.0")
             .setConnectTimeoutMs(8000)
             .setReadTimeoutMs(8000)
             .setAllowCrossProtocolRedirects(true)
@@ -823,12 +823,12 @@ class PlayerActivity : ComponentActivity() {
     }
 
     /**
-     * 分屏/窗口尺寸变化时重新计算画面比例
+     * 多窗口/分屏尺寸变化时重新计算画面比例
      * configChanges 已在 Manifest 中声明 screenSize|screenLayout，Activity 不会重建
      */
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
         super.onConfigurationChanged(newConfig)
-        // 分屏窗口尺寸变化后，重新应用画面比例以适配新的可用区域
+        // 窗口尺寸变化后，重新应用画面比例以适配新的可用区域
         applyAspectRatio(currentAspectRatio)
     }
 

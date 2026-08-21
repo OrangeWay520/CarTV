@@ -14,6 +14,7 @@ local.properties
 *.aab
 *.jks
 *.keystore
+keystore.properties
 
 # 根目录赞赏码原图（res/drawable-nodpi 中已有正式资源副本）
 /donate_*.png

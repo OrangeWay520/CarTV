@@ -6,6 +6,12 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// 读取签名配置（keystore.properties 已加入 .gitignore 严禁提交；不存在时回退本地文件）
+val keystoreProps = Properties().apply {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) FileInputStream(f).use { load(it) }
+}
+
 // 读取 local.properties（不在版本控制中），用于问题反馈的 GitHub Token
 val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
@@ -23,8 +29,8 @@ android {
         applicationId = "com.orangeway.iptv"
         minSdk = 23
         targetSdk = 37
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = 4
+        versionName = "1.0.3"
         // 问题反馈用的 GitHub Token（仅创建 Issue 权限），未配置时提交会提示失败
         buildConfigField("String", "GITHUB_TOKEN", "\"$githubToken\"")
         // 问题反馈用 WxPusher 微信推送配置，未配置时提交会提示失败
@@ -32,10 +38,20 @@ android {
         buildConfigField("String", "WXPUSHER_UID", "\"$wxpusherUid\"")
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(keystoreProps.getProperty("storeFile", "release.jks"))
+            storePassword = keystoreProps.getProperty("storePassword", "")
+            keyAlias = keystoreProps.getProperty("keyAlias", "hereiam")
+            keyPassword = keystoreProps.getProperty("keyPassword", "")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

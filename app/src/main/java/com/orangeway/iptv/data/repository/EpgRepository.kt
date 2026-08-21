@@ -100,7 +100,7 @@ class EpgRepository {
         return try {
             val request = Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", "OrangeIPTVCar/1.0")
+                .addHeader("User-Agent", "OrangeIPTV/1.0")
                 .build()
             client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) response.body?.string() else null

@@ -18,5 +18,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "OrangeIPTV.Car"
+rootProject.name = "OrangeIPTV"
 include(":app")
