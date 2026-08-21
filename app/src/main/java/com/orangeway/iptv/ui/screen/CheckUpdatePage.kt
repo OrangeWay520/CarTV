@@ -181,44 +181,53 @@ fun CheckUpdatePage(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.TopCenter
             ) {
-                // 显示框
-                Surface(
-                    onClick = { sourceMenu = true },
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shadowElevation = 2.dp,
-                    modifier = Modifier.height(40.dp)
+                // 固定宽度容器：让显示框与下拉托盘以同一中心对齐，避免托盘贴向最左
+                Box(
+                    modifier = Modifier.width(220.dp),
+                    contentAlignment = Alignment.TopCenter
                 ) {
-                    Row(
-                        modifier = Modifier.padding(start = 6.dp, end = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    // 显示框
+                    Surface(
+                        onClick = { sourceMenu = true },
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shadowElevation = 2.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(40.dp)
                     ) {
-                        SourceLogo(logoRes = currentSource.logoRes, size = 26.dp)
-                        Text(
-                            currentSource.label,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Icon(
-                            Icons.Filled.ArrowDropDown,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp)
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 6.dp, end = 32.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            SourceLogo(logoRes = currentSource.logoRes, size = 26.dp)
+                            Text(
+                                currentSource.label,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Icon(
+                                Icons.Filled.ArrowDropDown,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     }
-                }
 
-                // 浮动 DropdownMenu：悬浮在页面内容上方，不把下方更新日志向下顶
-                DropdownMenu(
-                    expanded = sourceMenu,
-                    onDismissRequest = { sourceMenu = false },
-                    shape = RoundedCornerShape(16.dp),
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    shadowElevation = 4.dp,
-                    modifier = Modifier.widthIn(min = 200.dp, max = 260.dp)
-                ) {
+                    // 浮动 DropdownMenu：悬浮在页面内容上方，不把下方更新日志向下顶
+                    DropdownMenu(
+                        expanded = sourceMenu,
+                        onDismissRequest = { sourceMenu = false },
+                        shape = RoundedCornerShape(16.dp),
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        shadowElevation = 4.dp,
+                        modifier = Modifier.width(220.dp)
+                    ) {
                     DownloadSource.entries.forEach { src ->
                         SourceSelectRow(
                             source = src,
@@ -235,6 +244,7 @@ fun CheckUpdatePage(
                                 sourceMenu = false
                             }
                         )
+                    }
                     }
                 }
             }

@@ -70,7 +70,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
+
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -189,8 +189,7 @@ fun HomeScreen(
                                     bitmap = logoBitmap,
                                     contentDescription = "应用图标",
                                     modifier = Modifier
-                                        .size(54.dp)
-                                        .scale(1.3f)
+                                        .size(34.dp)
                                 )
                             } else {
                                 Icon(
