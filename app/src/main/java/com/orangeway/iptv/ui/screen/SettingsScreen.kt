@@ -1,9 +1,14 @@
 package com.orangeway.iptv.ui.screen
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,12 +26,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Feedback
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Palette
@@ -39,6 +46,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.Image
@@ -48,8 +57,6 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -71,20 +78,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.orangeway.iptv.BuildConfig
+import com.orangeway.iptv.LocaleManager
 import com.orangeway.iptv.R
 import com.orangeway.iptv.data.UpdateCheck
+import com.orangeway.iptv.data.model.Country
 import com.orangeway.iptv.data.model.RegionProvider
+import com.orangeway.iptv.data.model.USState
 import com.orangeway.iptv.data.repository.RegionEntry
 import com.orangeway.iptv.data.repository.SettingsRepository
 import com.orangeway.iptv.ui.theme.ThemeMode
 import kotlinx.coroutines.launch
 
 private enum class SettingsPage {
-    MAIN, PLAYLIST, REGION_PROVINCE, REGION_CITY, CATEGORY_FILTER, THEME, DECODER, ABOUT, FEEDBACK
+    MAIN, LANGUAGE, REGION_PROVINCE, REGION_CITY, CATEGORY_FILTER, THEME, DECODER, ABOUT, FEEDBACK
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,27 +106,16 @@ fun SettingsScreen(
     homeViewModel: HomeViewModel,
     onCheckUpdateClick: () -> Unit,
     onNavigateBack: () -> Unit,
-    initialPage: String = "MAIN"
 ) {
-    val startPage = when (initialPage) {
-        "PLAYLIST" -> SettingsPage.PLAYLIST
-        "REGION_PROVINCE" -> SettingsPage.REGION_PROVINCE
-        "CATEGORY_FILTER" -> SettingsPage.CATEGORY_FILTER
-        "THEME" -> SettingsPage.THEME
-        "DECODER" -> SettingsPage.DECODER
-        "ABOUT" -> SettingsPage.ABOUT
-        else -> SettingsPage.MAIN
-    }
-    var currentPage by remember { mutableStateOf(startPage) }
+    var currentPage by remember { mutableStateOf(SettingsPage.MAIN) }
     var selectedProvinceName by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
-    val apiUrl by settingsRepository.apiUrl.collectAsState(initial = SettingsRepository.DEFAULT_API_URL)
-    val refreshInterval by settingsRepository.refreshInterval.collectAsState(initial = SettingsRepository.DEFAULT_REFRESH_INTERVAL)
     val savedRegionMap by settingsRepository.regionData.collectAsState(initial = emptyMap())
     val uiState by homeViewModel.uiState.collectAsState()
-    val mergeTxtEnabled by settingsRepository.mergeTxtEnabled.collectAsState(initial = false)
-    val mergeTxtUrl by settingsRepository.mergeTxtUrl.collectAsState(initial = "")
+    val currentCountry by settingsRepository.country.collectAsState(initial = Country.CHINA)
+    val currentUsStateCode by settingsRepository.usStateCode.collectAsState(initial = "")
+    val currentUsState = RegionProvider.usStates.find { it.code == currentUsStateCode }
 
     // 暂存区：进入地区设置时从 savedRegionMap 初始化，修改先保存在这里
     var pendingRegionMap by remember { mutableStateOf<Map<String, RegionEntry>>(emptyMap()) }
@@ -167,20 +168,16 @@ fun SettingsScreen(
         }
     }
 
-    var urlInput by remember(apiUrl) { mutableStateOf(apiUrl) }
-    var intervalInput by remember(refreshInterval) { mutableStateOf(refreshInterval) }
-    var mergeTxtUrlInput by remember(mergeTxtUrl) { mutableStateOf(mergeTxtUrl) }
-
     val title = when (currentPage) {
-        SettingsPage.MAIN -> "设置"
-        SettingsPage.PLAYLIST -> "播放列表设置"
-        SettingsPage.REGION_PROVINCE -> "选择省份"
-        SettingsPage.REGION_CITY -> "选择城市"
-        SettingsPage.CATEGORY_FILTER -> "频道分类设置"
-        SettingsPage.THEME -> "主题设置"
-        SettingsPage.DECODER -> "解码模式"
-        SettingsPage.ABOUT -> "关于"
-        SettingsPage.FEEDBACK -> "问题反馈"
+        SettingsPage.MAIN -> stringResource(R.string.settings_title)
+        SettingsPage.LANGUAGE -> stringResource(R.string.language_title)
+        SettingsPage.REGION_PROVINCE -> stringResource(R.string.region_title)
+        SettingsPage.REGION_CITY -> stringResource(R.string.city_title)
+        SettingsPage.CATEGORY_FILTER -> stringResource(R.string.category_title)
+        SettingsPage.THEME -> stringResource(R.string.theme_title)
+        SettingsPage.DECODER -> stringResource(R.string.decoder_title)
+        SettingsPage.ABOUT -> stringResource(R.string.about_title)
+        SettingsPage.FEEDBACK -> stringResource(R.string.feedback_title)
     }
 
     Scaffold(
@@ -198,7 +195,7 @@ fun SettingsScreen(
                             else -> currentPage = SettingsPage.MAIN
                         }
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -212,54 +209,36 @@ fun SettingsScreen(
                 modifier = Modifier.padding(padding),
                 regionMap = savedRegionMap,
                 hiddenCategories = uiState.hiddenCategories,
-                onPlaylistClick = { currentPage = SettingsPage.PLAYLIST },
+                country = currentCountry,
+                usState = currentUsState,
                 onRegionClick = { currentPage = SettingsPage.REGION_PROVINCE },
                 onCategoryFilterClick = { currentPage = SettingsPage.CATEGORY_FILTER },
                 onThemeClick = { currentPage = SettingsPage.THEME },
                 onDecoderClick = { currentPage = SettingsPage.DECODER },
+                onLanguageClick = { currentPage = SettingsPage.LANGUAGE },
                 onAboutClick = { currentPage = SettingsPage.ABOUT },
                 onFeedbackClick = { currentPage = SettingsPage.FEEDBACK }
             )
-            SettingsPage.PLAYLIST -> PlaylistSettingsPage(
-                modifier = Modifier.padding(padding),
-                urlInput = urlInput,
-                intervalInput = intervalInput,
-                mergeTxtEnabled = mergeTxtEnabled,
-                mergeTxtUrlInput = mergeTxtUrlInput,
-                onUrlChange = { urlInput = it },
-                onIntervalChange = { intervalInput = it },
-                onMergeTxtChange = { enabled ->
-                    scope.launch {
-                        settingsRepository.saveMergeTxtEnabled(enabled)
-                    }
-                },
-                onMergeTxtUrlChange = { mergeTxtUrlInput = it },
-                onSave = {
-                    scope.launch {
-                        settingsRepository.saveApiUrl(urlInput.trim())
-                        settingsRepository.saveRefreshInterval(intervalInput.trim())
-                        settingsRepository.saveMergeTxtUrl(mergeTxtUrlInput.trim())
-                    }
-                    currentPage = SettingsPage.MAIN
-                },
-                onResetToDefault = {
-                    urlInput = SettingsRepository.DEFAULT_API_URL
-                    intervalInput = SettingsRepository.DEFAULT_REFRESH_INTERVAL
-                    mergeTxtUrlInput = ""
-                    scope.launch {
-                        settingsRepository.saveApiUrl(SettingsRepository.DEFAULT_API_URL)
-                        settingsRepository.saveRefreshInterval(SettingsRepository.DEFAULT_REFRESH_INTERVAL)
-                        settingsRepository.saveMergeTxtUrl("")
-                    }
-                    currentPage = SettingsPage.MAIN
-                }
+            SettingsPage.LANGUAGE -> LanguageSelectionPage(
+                modifier = Modifier.padding(padding)
             )
-            SettingsPage.REGION_PROVINCE -> ProvinceSelectionPage(
+            SettingsPage.REGION_PROVINCE -> RegionSelectionPage(
                 modifier = Modifier.padding(padding),
                 regionMap = pendingRegionMap,
+                country = currentCountry,
+                usStateCode = currentUsStateCode,
+                onCountryChange = { country ->
+                    scope.launch {
+                        settingsRepository.saveCountry(country)
+                    }
+                },
+                onUsStateSelect = { code ->
+                    scope.launch {
+                        settingsRepository.saveUsStateCode(code)
+                    }
+                },
                 onProvinceSelected = { province ->
                     selectedProvinceName = province
-                    // 初始化城市页状态
                     val entry = pendingRegionMap[province]
                     citySelected = entry?.cities?.filter { it.isNotBlank() } ?: emptyList()
                     cityShowAll = entry?.showAll ?: false
@@ -326,24 +305,30 @@ private fun MainMenuPage(
     modifier: Modifier,
     regionMap: Map<String, RegionEntry>,
     hiddenCategories: List<String>,
-    onPlaylistClick: () -> Unit,
+    country: Country,
+    usState: USState?,
     onRegionClick: () -> Unit,
     onCategoryFilterClick: () -> Unit,
     onThemeClick: () -> Unit,
     onDecoderClick: () -> Unit,
+    onLanguageClick: () -> Unit,
     onAboutClick: () -> Unit,
     onFeedbackClick: () -> Unit
 ) {
-    val regionSubtitle = if (regionMap.isNotEmpty()) {
-        "当前: " + regionMap.entries.joinToString(", ") { (province, entry) ->
-            if (entry.showAll) "$province·全省"
+    val entireProvince = stringResource(R.string.entire_province)
+    val regionSubtitle = if (country == Country.USA) {
+        if (usState != null) stringResource(R.string.menu_current_fmt, "美国·${usState.name}")
+        else stringResource(R.string.menu_region_us_nostate)
+    } else if (regionMap.isNotEmpty()) {
+        stringResource(R.string.menu_current_fmt, regionMap.entries.joinToString(", ") { (province, entry) ->
+            if (entry.showAll) "$province·$entireProvince"
             else {
                 // 仅显示所选城市，不显示省级频道状态
-                if (entry.cities.isNotEmpty()) "$province·${entry.cities.joinToString("/")}" else "$province·全省"
+                if (entry.cities.isNotEmpty()) "$province·${entry.cities.joinToString("/")}" else "$province·$entireProvince"
             }
-        }
+        })
     } else {
-        "筛选地方频道，只看本地节目"
+        stringResource(R.string.menu_region_subtitle_none)
     }
     Column(
         modifier = modifier
@@ -353,45 +338,48 @@ private fun MainMenuPage(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         MenuCard(
-            icon = Icons.AutoMirrored.Filled.List,
-            title = "播放列表设置",
-            subtitle = "配置直播源地址和刷新间隔",
-            onClick = onPlaylistClick
-        )
-        MenuCard(
             icon = Icons.Default.LocationOn,
-            title = "地区设置",
+            title = stringResource(R.string.menu_region_title),
             subtitle = regionSubtitle,
             onClick = onRegionClick
         )
         MenuCard(
             icon = Icons.Default.Category,
-            title = "频道分类设置",
-            subtitle = if (hiddenCategories.isNotEmpty()) "已隐藏 ${hiddenCategories.size} 个分类" else "隐藏不感兴趣的频道分类",
+            title = stringResource(R.string.menu_category_title),
+            subtitle = if (hiddenCategories.isNotEmpty())
+                stringResource(R.string.menu_category_subtitle_hidden_fmt, hiddenCategories.size)
+            else
+                stringResource(R.string.menu_category_subtitle_none),
             onClick = onCategoryFilterClick
         )
         MenuCard(
             icon = Icons.Default.Palette,
-            title = "主题设置",
-            subtitle = "切换深浅色主题模式",
+            title = stringResource(R.string.menu_theme_title),
+            subtitle = stringResource(R.string.menu_theme_subtitle),
             onClick = onThemeClick
         )
         MenuCard(
             icon = Icons.Default.Memory,
-            title = "解码模式",
-            subtitle = "切换硬件/软件解码方式",
+            title = stringResource(R.string.menu_decoder_title),
+            subtitle = stringResource(R.string.menu_decoder_subtitle),
             onClick = onDecoderClick
         )
         MenuCard(
+            icon = Icons.Default.Language,
+            title = stringResource(R.string.menu_language_title),
+            subtitle = stringResource(R.string.menu_language_subtitle),
+            onClick = onLanguageClick
+        )
+        MenuCard(
             icon = Icons.Default.Feedback,
-            title = "问题反馈",
-            subtitle = "反馈使用中遇到的问题",
+            title = stringResource(R.string.menu_feedback_title),
+            subtitle = stringResource(R.string.menu_feedback_subtitle),
             onClick = onFeedbackClick
         )
         MenuCard(
             icon = Icons.Default.Info,
-            title = "关于",
-            subtitle = "版本信息、数据来源等",
+            title = stringResource(R.string.menu_about_title),
+            subtitle = stringResource(R.string.menu_about_subtitle),
             onClick = onAboutClick
         )
     }
@@ -444,400 +432,415 @@ private fun MenuCard(
 }
 
 @Composable
-private fun PlaylistSettingsPage(
-    modifier: Modifier,
-    urlInput: String,
-    intervalInput: String,
-    mergeTxtEnabled: Boolean,
-    mergeTxtUrlInput: String,
-    onUrlChange: (String) -> Unit,
-    onIntervalChange: (String) -> Unit,
-    onMergeTxtChange: (Boolean) -> Unit,
-    onMergeTxtUrlChange: (String) -> Unit,
-    onSave: () -> Unit,
-    onResetToDefault: () -> Unit
-) {
-    var showResetDialog by remember { mutableStateOf(false) }
+private fun LanguageSelectionPage(modifier: Modifier) {
+    val context = LocalContext.current
+    val currentCode = remember { LocaleManager.langCode(context) }
+    val explicit = remember { LocaleManager.isExplicit(context) }
 
-    // 确认恢复对话框
-    if (showResetDialog) {
-        AlertDialog(
-            onDismissRequest = { showResetDialog = false },
-            title = {
-                Text(
-                    text = "恢复默认",
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Text("确定要恢复为默认播放列表吗？\n\n当前自定义的播放列表地址、刷新间隔和双源合并设置将被清除。")
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    showResetDialog = false
-                    onResetToDefault()
-                }) {
-                    Text("确定恢复", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showResetDialog = false }) {
-                    Text("取消")
-                }
-            }
-        )
-    }
+    data class LangOption(val key: String?, val label: String, val description: String)
+    val options = listOf(
+        LangOption(null, stringResource(R.string.lang_follow_system), stringResource(R.string.lang_follow_system_desc)),
+        LangOption("zh", stringResource(R.string.lang_simplified_chinese), stringResource(R.string.lang_chinese_desc)),
+        LangOption("en", stringResource(R.string.lang_english), stringResource(R.string.lang_english_desc))
+    )
+    val selectedKey = if (explicit) currentCode else null
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
-            text = "播放列表地址",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground
+            text = stringResource(R.string.language_choose_hint),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // === 快速选择预置播放列表 ===
-        // Orange Way 播放列表：支持 CDN 加速开关（开=gh-proxy 加速地址，关=GitHub 原始地址）
-        val orangeCdnEnabled = urlInput == SettingsRepository.DEFAULT_API_URL
-        PlaylistPresetCard(
-            name = "Orange Way播放列表",
-            description = "多源聚合，1000+ 频道，每 6 小时自动更新",
-            isSelected = urlInput == SettingsRepository.DEFAULT_API_URL ||
-                urlInput == SettingsRepository.ORANGE_PLAYLIST_URL,
-            onClick = {
-                onUrlChange(
-                    if (orangeCdnEnabled) SettingsRepository.DEFAULT_API_URL
-                    else SettingsRepository.ORANGE_PLAYLIST_URL
-                )
-            },
-            trailing = {
-                // CDN 加速开关：开启用 gh-proxy 加速，关闭用 GitHub 原始地址
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Switch(
-                        checked = orangeCdnEnabled,
-                        onCheckedChange = { enabled ->
-                            onUrlChange(
-                                if (enabled) SettingsRepository.DEFAULT_API_URL
-                                else SettingsRepository.ORANGE_PLAYLIST_URL
-                            )
-                        }
-                    )
-                    Text(
-                        text = "CDN加速",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        )
-        PlaylistPresetCard(
-            name = "vbskycn 备用源",
-            description = "内置默认源，央视/卫视/地方频道",
-            isSelected = urlInput == SettingsRepository.BACKUP_API_URL,
-            onClick = { onUrlChange(SettingsRepository.BACKUP_API_URL) }
-        )
-
-        OutlinedTextField(
-            value = urlInput,
-            onValueChange = onUrlChange,
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("M3U/TXT 播放列表地址或 iptv-api 地址") },
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline
-            )
-        )
-        Text(
-            text = "支持以下格式：\n" +
-                    "1. M3U 播放列表 (https://.../xxx.m3u)\n" +
-                    "2. TXT 播放列表 (https://.../xxx.txt)\n" +
-                    "3. iptv-api 服务地址 (http://ip:端口)\n" +
-                    "\n" +
-                    "默认已内置 M3U 格式直播源，\n" +
-                    "含央视、卫视等频道，支持台标显示。",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = "刷新间隔（分钟）",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        OutlinedTextField(
-            value = intervalInput,
-            onValueChange = onIntervalChange,
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("例如: 30") },
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline
-            )
-        )
-        Spacer(Modifier.height(16.dp))
-
-        // === M3U+TXT 双源合并开关 ===
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = if (mergeTxtEnabled)
-                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                else
-                    MaterialTheme.colorScheme.surfaceVariant
-            )
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "M3U+TXT 双源合并",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = if (mergeTxtEnabled)
-                            "已开启：使用 M3U 的台标信息 + TXT 的更多源地址"
-                        else
-                            "关闭：仅使用当前播放列表的源地址",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
-                Switch(
-                    checked = mergeTxtEnabled,
-                    onCheckedChange = onMergeTxtChange
-                )
-            }
-        }
-
-        // === 自定义 TXT 合并地址（仅在开关开启时显示） ===
-        if (mergeTxtEnabled) {
+        options.forEach { option ->
             Card(
+                onClick = {
+                    LocaleManager.save(context, option.key ?: "")
+                    // 语言写入后重建整个 Activity，使新语言立即生效
+                    context.findActivity()?.recreate()
+                },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = if (selectedKey == option.key)
+                        MaterialTheme.colorScheme.primaryContainer
+                    else
+                        MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "自定义合并地址（可选）",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(bottom = 4.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = selectedKey == option.key,
+                        onClick = null
                     )
-                    Text(
-                        text = "留空时自动根据主地址后缀推导（.m3u → .txt，.txt → .m3u）",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-                    OutlinedTextField(
-                        value = mergeTxtUrlInput,
-                        onValueChange = onMergeTxtUrlChange,
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("https://example.com/iptv.txt") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = option.label,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
                         )
-                    )
+                        Text(
+                            text = option.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
-
-        Spacer(Modifier.height(8.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Button(
-                onClick = onSave,
-                modifier = Modifier.weight(1f).height(48.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("保存", style = MaterialTheme.typography.titleMedium)
-            }
-            Button(
-                onClick = { showResetDialog = true },
-                modifier = Modifier.weight(1f).height(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                )
-            ) {
-                Text("恢复默认", style = MaterialTheme.typography.titleSmall)
-            }
-        }
     }
 }
 
-@Composable
-private fun PlaylistPresetCard(
-    name: String,
-    description: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    trailing: @Composable (() -> Unit)? = null
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected)
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            else
-                MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = if (isSelected)
-                    Icons.Default.CheckCircle
-                else
-                    Icons.Default.RadioButtonUnchecked,
-                contentDescription = null,
-                tint = if (isSelected)
-                    MaterialTheme.colorScheme.primary
-                else
-                    MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(end = 12.dp)
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            if (trailing != null) {
-                Spacer(Modifier.width(8.dp))
-                trailing()
-            }
-        }
+/** 沿 ContextWrapper 链向上查找 Activity，用于语言切换后触发 recreate() */
+private tailrec fun Context.findActivity(): Activity? =
+    when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
     }
-}
 
 @Composable
-private fun ProvinceSelectionPage(
+private fun RegionSelectionPage(
     modifier: Modifier,
     regionMap: Map<String, RegionEntry>,
+    country: Country,
+    usStateCode: String,
+    onCountryChange: (Country) -> Unit,
+    onUsStateSelect: (String) -> Unit,
     onProvinceSelected: (String) -> Unit,
     onClearAll: () -> Unit,
     onDone: () -> Unit
 ) {
+    val context = LocalContext.current
+    val entireProvince = stringResource(R.string.entire_province)
+    val cityCountFmt = stringResource(R.string.city_count_fmt)
+
     Column(modifier = modifier.fillMaxSize()) {
-        LazyColumn(
+        // 国家/地区选择卡片（顶部）
+        CountrySelectorCard(
+            country = country,
+            onCountryChange = onCountryChange,
             modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            items(RegionProvider.provinces) { province ->
-                val isSelected = province.name in regionMap
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+
+        if (country == Country.USA) {
+            // === 美国模式：可选"全国频道"或单选某州 ===
+            // 不选州（全国）→ 仅国家频道；选州 → 国家频道 + 州频道（合并去重）
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // 全国频道选项（不选州）
+                item {
+                    val isNational = usStateCode.isBlank()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onUsStateSelect("") }
+                            .padding(vertical = 12.dp, horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (isNational)
+                                Icons.Default.Check
+                            else
+                                Icons.Default.RadioButtonUnchecked,
+                            contentDescription = null,
+                            tint = if (isNational)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.us_national),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (isNational) FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (isNational)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = stringResource(R.string.us_national_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    HorizontalDivider()
+                    Text(
+                        text = stringResource(R.string.us_state_label),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp)
+                    )
+                }
+                items(RegionProvider.usStates) { state ->
+                    val isSelected = state.code == usStateCode
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onUsStateSelect(state.code) }
+                            .padding(vertical = 12.dp, horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (isSelected)
+                                Icons.Default.Check
+                            else
+                                Icons.Default.RadioButtonUnchecked,
+                            contentDescription = null,
+                            tint = if (isSelected)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text(
+                            text = state.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (isSelected)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = state.code,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    HorizontalDivider()
+                }
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(R.string.us_state_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                }
+            }
+
+            // 美国模式底部按钮：不需要强制选州，点完成即保存当前选择返回
+            Button(
+                onClick = onDone,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(stringResource(R.string.save_region))
+            }
+        } else {
+            // === 中国模式：省份列表（原有逻辑） ===
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                items(RegionProvider.provinces) { province ->
+                    val isSelected = province.name in regionMap
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onProvinceSelected(province.name) }
+                            .padding(vertical = 12.dp, horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // 已选省份标记
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                        }
+                        Text(
+                            text = province.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (isSelected) {
+                            // 显示已选城市的简要描述
+                            val entry = regionMap[province.name]!!
+                            val desc = if (entry.showAll) entireProvince
+                                       else {
+                                           // 仅显示所选城市，不显示省级频道状态
+                                           if (entry.cities.isNotEmpty()) entry.cities.joinToString("/") else entireProvince
+                                       }
+                            Text(
+                                text = desc,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                        } else {
+                            Text(
+                                text = stringResource(R.string.city_count_fmt, province.cities.size),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    HorizontalDivider()
+                }
+            }
+
+            // 底部操作按钮
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(
+                    onClick = onClearAll,
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    )
+                ) {
+                    Text(stringResource(R.string.clear_filter))
+                }
+                Button(
+                    onClick = onDone,
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(stringResource(R.string.save_region))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 国家/地区选择卡片：卡片内嵌下拉托盘（DropDown），用户选择 中国 / 美国。
+ * 选择美国后下方列表切换为美国各州。
+ */
+@Composable
+private fun CountrySelectorCard(
+    country: Country,
+    onCountryChange: (Country) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(R.string.country_label),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(8.dp))
+            BoxWithConstraints {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onProvinceSelected(province.name) }
-                        .padding(vertical = 12.dp, horizontal = 8.dp),
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { expanded = true }
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.4f))
+                        .padding(horizontal = 12.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // 已选省份标记
-                    if (isSelected) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(end = 8.dp)
-                        )
-                    }
                     Text(
-                        text = province.name,
-                        style = MaterialTheme.typography.bodyLarge,
+                        text = if (country == Country.USA)
+                            stringResource(R.string.country_usa)
+                        else
+                            stringResource(R.string.country_china),
+                        style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f)
                     )
-                    if (isSelected) {
-                        // 显示已选城市的简要描述
-                        val entry = regionMap[province.name]!!
-                        val desc = if (entry.showAll) "全省"
-                                   else {
-                                       // 仅显示所选城市，不显示省级频道状态
-                                       if (entry.cities.isNotEmpty()) entry.cities.joinToString("/") else "全省"
-                                   }
-                        Text(
-                            text = desc,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(end = 8.dp)
-                        )
-                    } else {
-                        Text(
-                            text = "${province.cities.size}个城市",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(end = 8.dp)
-                        )
-                    }
                     Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = null,
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = if (expanded)
+                            stringResource(R.string.country_collapse)
+                        else
+                            stringResource(R.string.country_expand),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                HorizontalDivider()
-            }
-        }
 
-        // 底部操作按钮
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Button(
-                onClick = onClearAll,
-                modifier = Modifier.weight(1f).height(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                )
-            ) {
-                Text("清除筛选")
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    // 菜单宽度与显示框一致，左右边缘完全对齐
+                    modifier = Modifier.width(maxWidth)
+                ) {
+                    Country.entries.forEach { option ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = if (option == Country.USA)
+                                        stringResource(R.string.country_usa)
+                                    else
+                                        stringResource(R.string.country_china),
+                                    fontWeight = if (option == country) FontWeight.SemiBold else FontWeight.Normal
+                                )
+                            },
+                            onClick = {
+                                expanded = false
+                                if (option != country) onCountryChange(option)
+                            },
+                            trailingIcon = {
+                                if (option == country) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
             }
-            Button(
-                onClick = onDone,
-                modifier = Modifier.weight(1f).height(48.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("保存地区")
-            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = if (country == Country.USA)
+                    stringResource(R.string.country_subtitle_us)
+                else
+                    stringResource(R.string.country_subtitle_cn),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -869,12 +872,12 @@ private fun CitySelectionPage(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "显示全省频道",
+                    text = stringResource(R.string.show_all_channel),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "开启后显示 $provinceName 全省所有频道",
+                    text = stringResource(R.string.show_all_channel_desc_fmt, provinceName),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -891,12 +894,12 @@ private fun CitySelectionPage(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "显示省级频道",
+                    text = stringResource(R.string.show_province_channel),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "开启后同时显示 $provinceName 省级频道",
+                    text = stringResource(R.string.show_province_channel_desc_fmt, provinceName),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -907,7 +910,7 @@ private fun CitySelectionPage(
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
         Text(
-            text = "或选择具体城市（可多选）",
+            text = stringResource(R.string.or_select_cities),
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(vertical = 8.dp)
@@ -960,7 +963,7 @@ private fun CitySelectionPage(
             modifier = Modifier.fillMaxWidth().height(48.dp),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Text("确认")
+            Text(stringResource(R.string.confirm))
         }
     }
 }
@@ -980,13 +983,13 @@ private fun CategoryFilterPage(
             .padding(16.dp)
     ) {
         Text(
-            text = "选择要在首页展示的频道分类",
+            text = stringResource(R.string.category_filter_hint),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 12.dp)
         )
         Text(
-            text = "勾选 = 展示，取消勾选 = 隐藏",
+            text = stringResource(R.string.category_filter_tip),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -1000,7 +1003,7 @@ private fun CategoryFilterPage(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "请先返回首页加载频道列表后再来设置",
+                    text = stringResource(R.string.category_filter_empty),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1045,7 +1048,7 @@ private fun CategoryFilterPage(
                         if (isHidden) {
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                text = "（已隐藏）",
+                                text = stringResource(R.string.hidden_mark),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.error
                             )
@@ -1074,14 +1077,14 @@ private fun CategoryFilterPage(
                     contentColor = MaterialTheme.colorScheme.onSurface
                 )
             ) {
-                Text("全部显示")
+                Text(stringResource(R.string.show_all))
             }
             Button(
                 onClick = { onSave(hiddenSet.toList()) },
                 modifier = Modifier.weight(1f).height(48.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("保存设置")
+                Text(stringResource(R.string.save_settings))
             }
         }
     }
@@ -1103,7 +1106,7 @@ private fun ThemeSelectionPage(
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
-            text = "选择主题模式",
+            text = stringResource(R.string.theme_choose_hint),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -1111,14 +1114,14 @@ private fun ThemeSelectionPage(
 
         ThemeMode.entries.forEach { mode ->
             val label = when (mode) {
-                ThemeMode.SYSTEM -> "跟随系统"
-                ThemeMode.LIGHT -> "浅色"
-                ThemeMode.DARK -> "深色"
+                ThemeMode.SYSTEM -> stringResource(R.string.theme_follow_system)
+                ThemeMode.LIGHT -> stringResource(R.string.theme_light)
+                ThemeMode.DARK -> stringResource(R.string.theme_dark)
             }
             val description = when (mode) {
-                ThemeMode.SYSTEM -> "自动跟随系统主题设置"
-                ThemeMode.LIGHT -> "始终使用浅色主题"
-                ThemeMode.DARK -> "始终使用深色主题"
+                ThemeMode.SYSTEM -> stringResource(R.string.theme_follow_system_desc)
+                ThemeMode.LIGHT -> stringResource(R.string.theme_light_desc)
+                ThemeMode.DARK -> stringResource(R.string.theme_dark_desc)
             }
             Card(
                 onClick = {
@@ -1178,8 +1181,8 @@ private fun DecoderSelectionPage(
 
     data class DecoderOption(val key: String, val label: String, val description: String)
     val options = listOf(
-        DecoderOption("auto", "优先硬件解码", "使用GPU硬件解码，性能最佳。遇到不支持编码时自动回退到软件解码（推荐）"),
-        DecoderOption("software", "优先软件解码", "使用FFmpeg软解码，兼容性最强。适合硬件解码器不支持的频道")
+        DecoderOption("auto", stringResource(R.string.decoder_hw), stringResource(R.string.decoder_hw_desc)),
+        DecoderOption("software", stringResource(R.string.decoder_sw), stringResource(R.string.decoder_sw_desc))
     )
 
     Column(
@@ -1189,7 +1192,7 @@ private fun DecoderSelectionPage(
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
-            text = "选择解码模式",
+            text = stringResource(R.string.decoder_choose_hint),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -1266,7 +1269,7 @@ private fun AboutPage(modifier: Modifier, onCheckUpdateClick: () -> Unit) {
         ) {
             Image(
                 painter = painterResource(id = R.mipmap.ic_launcher_foreground),
-                contentDescription = "应用图标",
+                contentDescription = stringResource(R.string.app_icon),
                 modifier = Modifier.requiredSize(221.dp)
             )
         }
@@ -1274,7 +1277,7 @@ private fun AboutPage(modifier: Modifier, onCheckUpdateClick: () -> Unit) {
         Spacer(Modifier.height(24.dp))
 
         Text(
-            text = "橙子网络电视",
+            text = stringResource(R.string.about_app_name),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
@@ -1304,12 +1307,12 @@ private fun AboutPage(modifier: Modifier, onCheckUpdateClick: () -> Unit) {
             ) {
                 Icon(
                     imageVector = Icons.Filled.SystemUpdate,
-                    contentDescription = "检查更新",
+                    contentDescription = stringResource(R.string.check_update),
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    text = "检查更新",
+                    text = stringResource(R.string.check_update),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -1351,12 +1354,12 @@ private fun AboutPage(modifier: Modifier, onCheckUpdateClick: () -> Unit) {
             ) {
                 Icon(
                     imageVector = Icons.Filled.VolunteerActivism,
-                    contentDescription = "投喂作者",
+                    contentDescription = stringResource(R.string.feed_author),
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    text = "投喂作者",
+                    text = stringResource(R.string.feed_author),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -1379,36 +1382,21 @@ private fun AboutPage(modifier: Modifier, onCheckUpdateClick: () -> Unit) {
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                AboutRow("应用名称", "橙子网络电视")
+                AboutRow(stringResource(R.string.about_app_name_label), stringResource(R.string.about_app_name))
                 HorizontalDivider()
-                AboutRow("版本号", BuildConfig.VERSION_NAME)
+                AboutRow(stringResource(R.string.about_version_label), BuildConfig.VERSION_NAME)
                 HorizontalDivider()
-                AboutRow("应用类型", "网络电视直播播放器")
+                AboutRow(stringResource(R.string.about_type_label), stringResource(R.string.about_app_type))
                 HorizontalDivider()
-                AboutRow("应用描述", "面向安卓手机、平板、车机等设备的直播播放应用，聚合央视、卫视、地方、港澳台、少儿、体育、电影、音乐、纪录、付费等十大分类频道，点击即可一键播放，失效源自动切换，畅享稳定流畅的观看体验。")
+                AboutRow(stringResource(R.string.about_desc_label), stringResource(R.string.about_description))
                 HorizontalDivider()
-                AboutRow(
-                    "核心功能",
-                    "• 多源聚合播放，失效自动切换\n" +
-                        "• 频道收藏（播放器一键收藏，首页专属分类）\n" +
-                        "• 支持 M3U / TXT 播放列表及双源合并\n" +
-                        "• 台标缓存 + 加载超时兜底\n" +
-                        "• 节目预告（EPG 电子节目单）\n" +
-                        "• 地区筛选（省份 / 城市）\n" +
-                        "• 频道分类自定义显示\n" +
-                        "• 硬件 / 软件解码切换\n" +
-                        "• 浅色 / 深色 / 跟随系统主题"
-                )
+                AboutRow(stringResource(R.string.about_features_label), stringResource(R.string.about_features))
                 HorizontalDivider()
-                AboutRow(
-                    "技术栈",
-                    "Kotlin · Jetpack Compose (Material 3)\n" +
-                        "Media3 ExoPlayer · Coil · OkHttp · DataStore"
-                )
+                AboutRow(stringResource(R.string.about_tech_label), stringResource(R.string.about_tech))
                 HorizontalDivider()
-                AboutRow("开发者", "Orange Way")
+                AboutRow(stringResource(R.string.about_developer_label), stringResource(R.string.about_developer))
                 HorizontalDivider()
-                AboutRow("开源协议", "MIT License")
+                AboutRow(stringResource(R.string.about_license_label), stringResource(R.string.about_license))
             }
         }
 
@@ -1430,7 +1418,7 @@ private fun AboutPage(modifier: Modifier, onCheckUpdateClick: () -> Unit) {
             onDismissRequest = { showDonateDialog = false },
             title = {
                 Text(
-                    text = "投喂本喵~",
+                    text = stringResource(R.string.donate_title),
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
@@ -1445,11 +1433,11 @@ private fun AboutPage(modifier: Modifier, onCheckUpdateClick: () -> Unit) {
                         painter = painterResource(
                             id = if (isDark) R.drawable.donate_dark else R.drawable.donate_light
                         ),
-                        contentDescription = "赞赏二维码",
+                        contentDescription = stringResource(R.string.donate_qr_desc),
                         modifier = Modifier.size(260.dp)
                     )
                     Text(
-                        text = "随缘投喂喵~赏喵喵一个罐罐能让喵喵开心好久哦~",
+                        text = stringResource(R.string.donate_desc),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
@@ -1457,7 +1445,9 @@ private fun AboutPage(modifier: Modifier, onCheckUpdateClick: () -> Unit) {
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showDonateDialog = false }) { Text("关闭") }
+                TextButton(onClick = { showDonateDialog = false }) {
+                    Text(stringResource(R.string.close))
+                }
             }
         )
     }

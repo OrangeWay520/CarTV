@@ -79,6 +79,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -96,7 +97,6 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToSettings: () -> Unit,
-    onNavigateToPlaylistSettings: () -> Unit,
     onNavigateToPlayer: (Channel) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -159,7 +159,9 @@ fun HomeScreen(
                 (context as? android.app.Activity)?.finish()
             } else {
                 backPressedTime = now
-                Toast.makeText(context, "再按一次退出应用", Toast.LENGTH_SHORT).show()
+                context.getString(R.string.exit_hint).let {
+                    Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -173,7 +175,7 @@ fun HomeScreen(
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            placeholder = { Text("搜索频道名称...") },
+                            placeholder = { Text(stringResource(R.string.search_hint)) },
                             singleLine = true,
                             shape = RoundedCornerShape(24.dp),
                             modifier = Modifier
@@ -187,7 +189,7 @@ fun HomeScreen(
                             if (logoBitmap != null) {
                                 Image(
                                     bitmap = logoBitmap,
-                                    contentDescription = "应用图标",
+                                    contentDescription = stringResource(R.string.app_icon),
                                     modifier = Modifier
                                         .size(34.dp)
                                 )
@@ -200,7 +202,7 @@ fun HomeScreen(
                             }
                             Spacer(Modifier.width(8.dp))
                             Column {
-                                Text("橙子网络电视", fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.app_name), fontWeight = FontWeight.Bold)
                                 if (uiState.hasRegionFilter) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
@@ -230,18 +232,18 @@ fun HomeScreen(
                             isSearching = false
                             searchQuery = ""
                         }) {
-                            Icon(Icons.Default.Close, contentDescription = "关闭搜索")
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close_search))
                         }
                     } else {
                         IconButton(onClick = { isSearching = true }) {
-                            Icon(Icons.Default.Search, contentDescription = "搜索频道")
+                            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.search_channel))
                         }
                         IconButton(onClick = { viewModel.loadChannels() }) {
-                            Icon(Icons.Default.Refresh, contentDescription = "刷新")
+                            Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh))
                         }
                         IconButton(onClick = onNavigateToSettings) {
                             Box {
-                                Icon(Icons.Default.Settings, contentDescription = "设置")
+                                Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings))
                                 // 有新版本可更新时，在设置图标右上角点亮小红点
                                 if (UpdateCheck.hasUpdate) {
                                     Box(
@@ -280,7 +282,7 @@ fun HomeScreen(
                         )
                         Spacer(Modifier.height(16.dp))
                         Text(
-                            "正在加载频道列表...",
+                            stringResource(R.string.loading_playlist),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -294,14 +296,14 @@ fun HomeScreen(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "无法加载播放列表",
+                            text = stringResource(R.string.load_failed_title),
                             style = MaterialTheme.typography.headlineMedium,
                             color = MaterialTheme.colorScheme.onBackground,
                             textAlign = TextAlign.Center
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = uiState.errorMessage ?: "未知错误",
+                            text = uiState.errorMessage ?: stringResource(R.string.unknown_error),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
@@ -309,7 +311,7 @@ fun HomeScreen(
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = "当前播放列表: ${uiState.apiUrl}",
+                            text = stringResource(R.string.current_playlist_fmt, uiState.apiUrl),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
@@ -317,15 +319,11 @@ fun HomeScreen(
                         )
                         Spacer(Modifier.height(24.dp))
                         Button(onClick = { viewModel.loadChannels() }) {
-                            Text("重试")
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        Button(onClick = onNavigateToPlaylistSettings) {
-                            Text("设置播放列表地址")
+                            Text(stringResource(R.string.retry))
                         }
                         Spacer(Modifier.height(12.dp))
                         OutlinedButton(onClick = { viewModel.resetToDefaultUrl() }) {
-                            Text("恢复默认")
+                            Text(stringResource(R.string.reset_default))
                         }
                     }
                 }
@@ -394,7 +392,7 @@ fun HomeScreen(
                             // 搜索无结果提示
                             if (isSearching && searchQuery.isNotBlank() && filteredChannels.isEmpty()) {
                                 Text(
-                                    text = "未找到相关频道",
+                                    text = stringResource(R.string.no_matching),
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.align(Alignment.Center)
@@ -618,7 +616,7 @@ private fun BackToTopButton(
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowUp,
-                    contentDescription = "返回顶部",
+                    contentDescription = stringResource(R.string.back_to_top),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(28.dp)
                 )

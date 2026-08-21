@@ -15,6 +15,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // hCaptcha 原生 Compose SDK 由 jitpack 托管
+        maven { url = uri("https://jitpack.io") }
     }
 }
 

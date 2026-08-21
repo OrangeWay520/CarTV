@@ -9,6 +9,7 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.SystemClock
+import android.text.TextUtils
 import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
@@ -21,7 +22,6 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.OptIn
 import androidx.core.view.WindowCompat
@@ -44,6 +44,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import com.orangeway.iptv.LocaleAwareActivity
 import com.orangeway.iptv.data.model.EpgProgramme
 import com.orangeway.iptv.data.repository.EpgRepository
 import com.orangeway.iptv.data.repository.SettingsRepository
@@ -54,7 +55,7 @@ import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(UnstableApi::class)
-class PlayerActivity : ComponentActivity() {
+class PlayerActivity : LocaleAwareActivity() {
 
     companion object {
         private const val TAG = "PlayerActivity"
@@ -116,7 +117,7 @@ class PlayerActivity : ComponentActivity() {
             windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
         }
 
-        channelName = intent.getStringExtra("channel_name") ?: "未知频道"
+        channelName = intent.getStringExtra("channel_name") ?: getString(R.string.unknown_channel)
         val urlsJson = intent.getStringExtra("channel_urls") ?: ""
         val singleUrl = intent.getStringExtra("channel_url") ?: ""
 
@@ -180,7 +181,7 @@ class PlayerActivity : ComponentActivity() {
         )
         Toast.makeText(
             this,
-            if (isFavorite) "已收藏：$channelName" else "已取消收藏：$channelName",
+            if (isFavorite) getString(R.string.fav_added_fmt, channelName) else getString(R.string.fav_removed_fmt, channelName),
             Toast.LENGTH_SHORT
         ).show()
         lifecycleScope.launch {
@@ -281,7 +282,7 @@ class PlayerActivity : ComponentActivity() {
     private fun createBottomBar(): View {
         // --- 选择播放源 ---
         val sourceLabel = TextView(this).apply {
-            text = "选择播放源"
+            text = getString(R.string.player_source_label)
             setTextColor("#FF9800".toColorInt())
             textSize = 13f
             setPadding(0, 0, 0, 12)
@@ -298,7 +299,7 @@ class PlayerActivity : ComponentActivity() {
 
         // --- 画面比例 ---
         val ratioLabel = TextView(this).apply {
-            text = "画面比例"
+            text = getString(R.string.player_ratio_label)
             setTextColor("#FF9800".toColorInt())
             textSize = 13f
             setPadding(0, 24, 0, 12)
@@ -309,10 +310,10 @@ class PlayerActivity : ComponentActivity() {
         }
 
         val ratioOptions = listOf(
-            Triple("自适应", -1, AspectRatioFrameLayout.RESIZE_MODE_FIT),
+            Triple(getString(R.string.ratio_auto), -1, AspectRatioFrameLayout.RESIZE_MODE_FIT),
             Triple("16:9", 0, AspectRatioFrameLayout.RESIZE_MODE_ZOOM),
             Triple("4:3", 1, AspectRatioFrameLayout.RESIZE_MODE_ZOOM),
-            Triple("铺满", 2, AspectRatioFrameLayout.RESIZE_MODE_FILL)
+            Triple(getString(R.string.ratio_fill), 2, AspectRatioFrameLayout.RESIZE_MODE_FILL)
         )
 
         ratioOptions.forEach { (label, mode, _) ->
@@ -357,7 +358,7 @@ class PlayerActivity : ComponentActivity() {
 
         // --- 节目预告按钮（右下角，与"画面比例"按钮同排同高） ---
         val epgBtn = TextView(this).apply {
-            text = "节目预告"
+            text = getString(R.string.player_epg_btn)
             textSize = 14f
             setPadding(28, 24, 28, 24)
             setTextColor(Color.WHITE)
@@ -491,7 +492,7 @@ class PlayerActivity : ComponentActivity() {
         sourceButtonsContainer?.removeAllViews()
         urls.forEachIndexed { index, _ ->
             val btn = TextView(this).apply {
-                text = "源 ${index + 1}"
+                text = getString(R.string.player_source_btn_fmt, index + 1)
                 textSize = 14f
                 setPadding(40, 24, 40, 24)
                 setTextColor(Color.WHITE)
@@ -552,12 +553,12 @@ class PlayerActivity : ComponentActivity() {
 
         val text = when {
             current != null -> {
-                val base = "正在播放：${current.title}  ${current.startTimeText}-${current.endTimeText}"
-                if (next != null) "$base   即将播放：${next.title} ${next.startTimeText}" else base
+                val base = getString(R.string.epg_now_playing_fmt, current.title, current.startTimeText, current.endTimeText)
+                if (next != null) "$base   ${getString(R.string.epg_up_next_fmt, next.title, next.startTimeText)}" else base
             }
             // 当前无节目，显示下一个即将开始的节目
             else -> epgProgrammes.firstOrNull { it.startMillis >= now }?.let {
-                "今日节目：${it.title} ${it.startTimeText}-${it.endTimeText}"
+                getString(R.string.epg_today_fmt, it.title, it.startTimeText, it.endTimeText)
             } ?: ""
         }
         epgText?.text = text
@@ -570,7 +571,7 @@ class PlayerActivity : ComponentActivity() {
     @Suppress("SetTextI18n", "UseKtx")
     private fun showEpgDialog() {
         if (epgProgrammes.isEmpty()) {
-            Toast.makeText(this, "暂无节目预告数据，请稍后重试", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.epg_empty_toast), Toast.LENGTH_SHORT).show()
             return
         }
         val now = System.currentTimeMillis()
@@ -595,25 +596,41 @@ class PlayerActivity : ComponentActivity() {
                 gravity = Gravity.CENTER_VERTICAL
                 setPadding(0, 10.toPx(), 0, 10.toPx())
             }
-            row.addView(TextView(this@PlayerActivity).apply {
+            // 时间：固定宽度（适当收窄，给标题留更多空间）
+            row.addView(TextView(this).apply {
                 text = "${p.startTimeText}-${p.endTimeText}"
                 setTextColor(if (isCurrent) "#FF9800".toColorInt() else "#CCCCCC".toColorInt())
                 textSize = 14f
-                width = 130.toPx()
-            })
-            row.addView(TextView(this@PlayerActivity).apply {
+            }, LinearLayout.LayoutParams(96.toPx(), LinearLayout.LayoutParams.WRAP_CONTENT))
+            // 节目名：当前正在播放的用跑马灯滚动展示完整标题，其它单行省略
+            row.addView(TextView(this).apply {
                 text = p.title
                 setTextColor(if (isCurrent) "#FF9800".toColorInt() else Color.WHITE)
                 textSize = 15f
                 maxLines = 1
-            })
+                setSingleLine(true)
+                if (isCurrent) {
+                    // 正在播放：跑马灯横向滚动，完整显示长标题，不再省略
+                    ellipsize = TextUtils.TruncateAt.MARQUEE
+                    setMarqueeRepeatLimit(-1)
+                    setHorizontallyScrolling(true)
+                    isSelected = true
+                    isFocusable = true
+                    isFocusableInTouchMode = true
+                } else {
+                    ellipsize = TextUtils.TruncateAt.END
+                }
+            }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
             if (isCurrent) {
-                row.addView(TextView(this@PlayerActivity).apply {
-                    text = "（正在播放）"
+                // 播放标记：单行展示，绝不换行堆叠
+                row.addView(TextView(this).apply {
+                    text = getString(R.string.epg_now_playing_mark)
                     setTextColor("#FF9800".toColorInt())
                     textSize = 12f
                     setPadding(8.toPx(), 0, 0, 0)
-                })
+                    maxLines = 1
+                    setSingleLine(true)
+                }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
             }
             listColumn.addView(row)
         }
@@ -632,7 +649,7 @@ class PlayerActivity : ComponentActivity() {
             }
             setPadding(28.toPx(), 28.toPx(), 28.toPx(), 20.toPx())
             addView(TextView(this@PlayerActivity).apply {
-                text = "$channelName · 节目预告"
+                text = getString(R.string.epg_dialog_title_fmt, channelName)
                 setTextColor(Color.WHITE)
                 textSize = 18f
                 typeface = Typeface.DEFAULT_BOLD
@@ -642,7 +659,7 @@ class PlayerActivity : ComponentActivity() {
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
             ).apply { topMargin = 8.toPx() })
             addView(TextView(this@PlayerActivity).apply {
-                text = "点击窗口外部关闭"
+                text = getString(R.string.epg_dialog_close)
                 setTextColor("#888888".toColorInt())
                 textSize = 12f
                 gravity = Gravity.CENTER
@@ -653,7 +670,7 @@ class PlayerActivity : ComponentActivity() {
         dialog.setContentView(
             content,
             FrameLayout.LayoutParams(
-                (resources.displayMetrics.widthPixels * 0.82f).toInt(),
+                (resources.displayMetrics.widthPixels * 0.92f).toInt(),
                 (resources.displayMetrics.heightPixels * 0.62f).toInt(),
                 Gravity.CENTER
             )
@@ -679,7 +696,7 @@ class PlayerActivity : ComponentActivity() {
                     val threshold = if (hasBeenReady) 5000L else 6000L
                     if (SystemClock.elapsedRealtime() - start > threshold) {
                         runOnUiThread {
-                            Toast.makeText(this@PlayerActivity, "播放卡顿，自动切换源…", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@PlayerActivity, getString(R.string.player_stall_switch), Toast.LENGTH_SHORT).show()
                             tryNextUrl()
                         }
                         break
@@ -691,7 +708,7 @@ class PlayerActivity : ComponentActivity() {
 
     private fun startPlayback(index: Int) {
         if (index >= urls.size) {
-            runOnUiThread { Toast.makeText(this, "所有播放地址均无法播放", Toast.LENGTH_LONG).show() }
+            runOnUiThread { Toast.makeText(this, getString(R.string.all_sources_failed), Toast.LENGTH_LONG).show() }
             return
         }
         currentUrlIndex = index
@@ -765,13 +782,13 @@ class PlayerActivity : ComponentActivity() {
                                     }
                                     if (audioTrackCount == 0) {
                                         runOnUiThread {
-                                            Toast.makeText(this@PlayerActivity, "该源无音频，请尝试切换", Toast.LENGTH_LONG).show()
+                                            Toast.makeText(this@PlayerActivity, getString(R.string.source_no_audio), Toast.LENGTH_LONG).show()
                                         }
                                     } else if (audioSupportedCount == 0) {
                                         Log.w(TAG, "音轨均不被支持，${audioTrackCount}条，自动尝试下一个源")
                                         // 有音轨但设备不支持解码，自动尝试下一个源
                                         runOnUiThread {
-                                            Toast.makeText(this@PlayerActivity, "音频编码不支持，自动切换源...", Toast.LENGTH_LONG).show()
+                                            Toast.makeText(this@PlayerActivity, getString(R.string.audio_codec_unsupported), Toast.LENGTH_LONG).show()
                                         }
                                         exoPlayer.stop()
                                         tryNextUrl()
@@ -791,7 +808,7 @@ class PlayerActivity : ComponentActivity() {
                     override fun onPlayerError(error: PlaybackException) {
                         Log.e(TAG, "播放错误: ${error.message}", error)
                         runOnUiThread {
-                            Toast.makeText(this@PlayerActivity, "源 ${currentUrlIndex + 1} 不可用，尝试下一个...", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@PlayerActivity, getString(R.string.source_unavailable_fmt, currentUrlIndex + 1), Toast.LENGTH_SHORT).show()
                         }
                         tryNextUrl()
                     }
@@ -806,7 +823,7 @@ class PlayerActivity : ComponentActivity() {
     private fun tryNextUrl() {
         val nextIndex = currentUrlIndex + 1
         if (nextIndex < urls.size) startPlayback(nextIndex)
-        else runOnUiThread { Toast.makeText(this, "所有播放地址均不可用", Toast.LENGTH_LONG).show() }
+        else runOnUiThread { Toast.makeText(this, getString(R.string.all_sources_unavailable), Toast.LENGTH_LONG).show() }
     }
 
     private fun parseUrls(urlsJson: String, singleUrl: String): List<String> {

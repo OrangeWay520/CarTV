@@ -6,6 +6,42 @@ data class Province(
 )
 
 /**
+ * 支持的电视频道来源国家/地区。
+ * 每个国家决定下方行政区列表的数据来源与播放列表来源。
+ */
+enum class Country(
+    val id: String,
+    /** iptv-org 国家代码（countries/{code}.m3u） */
+    val code: String,
+    val label: String
+) {
+    CHINA("cn", "cn", "中国"),
+    USA("us", "us", "美国");
+
+    companion object {
+        fun fromId(id: String?): Country = entries.firstOrNull { it.id == id } ?: CHINA
+    }
+}
+
+/**
+ * 美国一个州/特区。
+ * @param code 两字母州代码（大写，用于拼 iptv-org 州源 URL：subdivisions/us-{code小写}.m3u）
+ * @param name 中文名
+ */
+data class USState(
+    val code: String,
+    val name: String
+)
+
+/** iptv-org 美国各州（含特区）源地址，如 加州 us-ca */
+fun stateSourceUrl(state: USState): String =
+    "https://iptv-org.github.io/iptv/subdivisions/us-${state.code.lowercase()}.m3u"
+
+/** iptv-org 美国国家级源地址（含全国统一播出的频道，如 CNN/MSNBC/Fox News 等） */
+fun usNationalSourceUrl(): String =
+    "https://iptv-org.github.io/iptv/countries/us.m3u"
+
+/**
  * 全国省市地区数据
  */
 object RegionProvider {
@@ -46,5 +82,35 @@ object RegionProvider {
         Province("台湾", listOf("台北", "高雄", "台中", "台南", "新竹", "嘉义")),
         Province("香港", listOf("香港")),
         Province("澳门", listOf("澳门"))
+    )
+
+    /** 美国 50 州 + 华盛顿哥伦比亚特区（代码与 iptv-org subdivisions/us-{code}.m3u 对应） */
+    val usStates: List<USState> = listOf(
+        USState("AL", "阿拉巴马"), USState("AK", "阿拉斯加"),
+        USState("AZ", "亚利桑那"), USState("AR", "阿肯色"),
+        USState("CA", "加利福尼亚"), USState("CO", "科罗拉多"),
+        USState("CT", "康涅狄格"), USState("DE", "特拉华"),
+        USState("DC", "哥伦比亚特区"), USState("FL", "佛罗里达"),
+        USState("GA", "佐治亚"), USState("HI", "夏威夷"),
+        USState("ID", "爱达荷"), USState("IL", "伊利诺伊"),
+        USState("IN", "印第安纳"), USState("IA", "艾奥瓦"),
+        USState("KS", "堪萨斯"), USState("KY", "肯塔基"),
+        USState("LA", "路易斯安那"), USState("ME", "缅因"),
+        USState("MD", "马里兰"), USState("MA", "马萨诸塞"),
+        USState("MI", "密歇根"), USState("MN", "明尼苏达"),
+        USState("MS", "密西西比"), USState("MO", "密苏里"),
+        USState("MT", "蒙大拿"), USState("NE", "内布拉斯加"),
+        USState("NV", "内华达"), USState("NH", "新罕布什尔"),
+        USState("NJ", "新泽西"), USState("NM", "新墨西哥"),
+        USState("NY", "纽约"), USState("NC", "北卡罗来纳"),
+        USState("ND", "北达科他"), USState("OH", "俄亥俄"),
+        USState("OK", "俄克拉何马"), USState("OR", "俄勒冈"),
+        USState("PA", "宾夕法尼亚"), USState("RI", "罗得岛"),
+        USState("SC", "南卡罗来纳"), USState("SD", "南达科他"),
+        USState("TN", "田纳西"), USState("TX", "得克萨斯"),
+        USState("UT", "犹他"), USState("VT", "佛蒙特"),
+        USState("VA", "弗吉尼亚"), USState("WA", "华盛顿"),
+        USState("WV", "西弗吉尼亚"), USState("WI", "威斯康星"),
+        USState("WY", "怀俄明")
     )
 }

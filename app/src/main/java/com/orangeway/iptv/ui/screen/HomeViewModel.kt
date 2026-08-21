@@ -4,7 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.orangeway.iptv.data.model.Channel
+import com.orangeway.iptv.data.model.Country
 import com.orangeway.iptv.data.model.RegionProvider
+import com.orangeway.iptv.data.model.stateSourceUrl
+import com.orangeway.iptv.data.model.usNationalSourceUrl
 import com.orangeway.iptv.data.parser.EpgParser
 import com.orangeway.iptv.data.repository.ChannelRepository
 import com.orangeway.iptv.data.repository.EpgRepository
@@ -30,6 +33,10 @@ data class HomeUiState(
     val regionFilter: String = "",
     /** 是否已设置地区筛选 */
     val hasRegionFilter: Boolean = false,
+    /** 当前选择的国家/地区 */
+    val country: Country = Country.CHINA,
+    /** 美国已选州的代码（如 "CA"），国家非美国时为空 */
+    val usStateCode: String = "",
     /** 当前隐藏的分类 */
     val hiddenCategories: List<String> = emptyList(),
     /** 已收藏的频道名称列表 */
@@ -47,6 +54,33 @@ class HomeViewModel(
         const val FAVORITE_CATEGORY = "收藏频道"
     }
 
+    /**
+     * 数据源配置：用户 API URL + 国家 + 美国州代码。
+     * - 国家=美国且未选州：仅拉取 iptv-org 美国国家级节目单（CNN/MSNBC 等全国频道）
+     * - 国家=美国且已选州：拉取全国节目单 + 该州节目单，合并去重
+     * - 其它：仅拉取用户自定义 API URL
+     */
+    private data class SourceConfig(
+        val apiUrl: String,
+        val country: Country,
+        val usStateCode: String
+    ) {
+        /** 实际用于拉取频道的数据源地址列表，依次拉取后合并 */
+        val sourceUrls: List<String>
+            get() = when {
+                country != Country.USA -> listOf(apiUrl)
+                usStateCode.isBlank() -> listOf(
+                    usNationalSourceUrl()
+                )
+                else -> listOf(
+                    usNationalSourceUrl(),
+                    RegionProvider.usStates.find { it.code == usStateCode }
+                        ?.let { stateSourceUrl(it) }
+                        ?: usNationalSourceUrl()
+                )
+            }
+    }
+
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -54,10 +88,20 @@ class HomeViewModel(
     private var rawChannels: List<Channel> = emptyList()
 
     init {
-        // 监听 API URL 变化
+        // 监听 API URL 与 国家/州选择，三者共同决定实际拉取的数据源
         viewModelScope.launch {
-            settingsRepository.apiUrl.collect { url ->
-                _uiState.value = _uiState.value.copy(apiUrl = url)
+            combine(
+                settingsRepository.apiUrl,
+                settingsRepository.country,
+                settingsRepository.usStateCode
+            ) { apiUrl, country, usStateCode ->
+                SourceConfig(apiUrl, country, usStateCode)
+            }.collect { source ->
+                _uiState.value = _uiState.value.copy(
+                    apiUrl = source.apiUrl,
+                    country = source.country,
+                    usStateCode = source.usStateCode
+                )
                 loadChannels()
             }
         }
@@ -81,7 +125,12 @@ class HomeViewModel(
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             val mergeTxt = settingsRepository.mergeTxtEnabled.first()
             val mergeTxtUrl = settingsRepository.mergeTxtUrl.first()
-            val result = channelRepository.fetchChannels(_uiState.value.apiUrl, mergeTxt, mergeTxtUrl)
+            val stateCode = _uiState.value.usStateCode
+            val country = _uiState.value.country
+            val source = SourceConfig(_uiState.value.apiUrl, country, stateCode)
+            // 美国模式下即使开启了 mergeTxt 也不合并 TXT（iptv-org 州源不提供 TXT），避免误拉不存在的地址
+            val effectiveMerge = if (country == Country.USA) false else mergeTxt
+            val result = channelRepository.fetchChannels(source.sourceUrls, effectiveMerge, if (country == Country.USA) "" else mergeTxtUrl)
             result.onSuccess { list ->
                 rawChannels = list
                 val regionMap = settingsRepository.regionData.first()
@@ -142,10 +191,13 @@ class HomeViewModel(
             .map { it.trim() }
             .filter { it.isNotBlank() }
 
-        // 1. 地区筛选：遍历所有设置了地区的省份，匹配地方频道
-        val regionFiltered = if (filter.regionMap.isEmpty()) {
-            allChannels
-        } else {
+        val currentCountry = _uiState.value.country
+        val currentUsState = RegionProvider.usStates
+            .find { it.code == _uiState.value.usStateCode }
+
+        // 1. 地区筛选：仅中国模式下按省份/城市过滤地方频道；
+        //    美国模式的频道来自所选州的 iptv-org 节目单（英文台名），不在此处过滤
+        val regionFiltered = if (currentCountry != Country.USA && filter.regionMap.isNotEmpty()) {
             allChannels.filter { channel ->
                 if (channel.category.contains("地方")) {
                     // 检查频道是否匹配任一已设置的省份/城市
@@ -168,6 +220,8 @@ class HomeViewModel(
                     true
                 }
             }
+        } else {
+            allChannels
         }
 
         // 2. 隐藏分类筛选
@@ -189,8 +243,14 @@ class HomeViewModel(
         val currentCategory = _uiState.value.selectedCategory
         val newCategory = if (currentCategory in displayCategories) currentCategory else displayCategories.firstOrNull()
 
-        // 构建地区筛选描述
-        val regionDesc = buildRegionDescription(filter.regionMap)
+        // 构建地区筛选描述（中国按省份，美国按州）
+        val isUs = currentCountry == Country.USA
+        val regionDesc = if (isUs) {
+            currentUsState?.let { "美国·${it.name}" } ?: "美国"
+        } else {
+            buildRegionDescription(filter.regionMap)
+        }
+        val hasRegion = if (isUs) currentUsState != null else filter.regionMap.isNotEmpty()
 
         // channels 始终为全量已过滤列表（各分类共用），
         // 展示层(HomeScreen)再按选中分类/收藏集合过滤，避免切换分类时丢失或残留频道
@@ -202,7 +262,7 @@ class HomeViewModel(
             isLoading = false,
             errorMessage = null,
             regionFilter = regionDesc,
-            hasRegionFilter = filter.regionMap.isNotEmpty(),
+            hasRegionFilter = hasRegion,
             hiddenCategories = hiddenList,
             favoriteChannels = filter.favoriteChannels
         )

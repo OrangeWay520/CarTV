@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">橙子网络电视</string>
+
+    <!-- 通用 -->
+    <string name="back">返回</string>
+    <string name="cancel">取消</string>
+    <string name="done">完成</string>
+    <string name="confirm">确认</string>
+    <string name="save">保存</string>
+    <string name="retry">重试</string>
+    <string name="close">关闭</string>
+    <string name="ok">好的</string>
+    <string name="unknown_error">未知错误</string>
+
+    <!-- 首页 -->
+    <string name="search_channel">搜索频道</string>
+    <string name="search_hint">搜索频道名称...</string>
+    <string name="app_icon">应用图标</string>
+    <string name="close_search">关闭搜索</string>
+    <string name="refresh">刷新</string>
+    <string name="settings">设置</string>
+    <string name="exit_hint">再按一次退出应用</string>
+    <string name="loading_playlist">正在加载频道列表...</string>
+    <string name="load_failed_title">无法加载播放列表</string>
+    <string name="current_playlist_fmt">当前播放列表: %1$s</string>
+    <string name="no_matching">未找到相关频道</string>
+    <string name="reset_default">恢复默认</string>
+    <string name="back_to_top">返回顶部</string>
+
+    <!-- 频道卡片 -->
+    <string name="now_playing_fmt">正在播放：%1$s</string>
+    <string name="live_channel">直播频道</string>
+    <string name="play">播放</string>
+    <string name="favorited">已收藏</string>
+    <string name="logo">台标</string>
+    <string name="channel_icon">频道图标</string>
+
+    <!-- 播放器 -->
+    <string name="unknown_channel">未知频道</string>
+    <string name="fav_added_fmt">已收藏：%1$s</string>
+    <string name="fav_removed_fmt">已取消收藏：%1$s</string>
+    <string name="player_source_label">选择播放源</string>
+    <string name="player_ratio_label">画面比例</string>
+    <string name="ratio_auto">自适应</string>
+    <string name="ratio_fill">铺满</string>
+    <string name="player_epg_btn">节目预告</string>
+    <string name="player_source_btn_fmt">源 %1$d</string>
+    <string name="epg_now_playing_fmt">正在播放：%1$s  %2$s-%3$s</string>
+    <string name="epg_up_next_fmt">即将播放：%1$s %2$s</string>
+    <string name="epg_today_fmt">今日节目：%1$s %2$s-%3$s</string>
+    <string name="epg_empty_toast">暂无节目预告数据，请稍后重试</string>
+    <string name="epg_now_playing_mark">（正在播放）</string>
+    <string name="epg_dialog_title_fmt">%1$s · 节目预告</string>
+    <string name="epg_dialog_close">点击窗口外部关闭</string>
+    <string name="player_stall_switch">播放卡顿，自动切换源…</string>
+    <string name="all_sources_failed">所有播放地址均无法播放</string>
+    <string name="source_no_audio">该源无音频，请尝试切换</string>
+    <string name="audio_codec_unsupported">音频编码不支持，自动切换源...</string>
+    <string name="source_unavailable_fmt">源 %1$d 不可用，尝试下一个...</string>
+    <string name="all_sources_unavailable">所有播放地址均不可用</string>
+
+    <!-- 设置页 -->
+    <string name="settings_title">设置</string>
+    <string name="region_title">地区设置</string>
+    <string name="city_title">选择城市</string>
+    <string name="category_title">频道分类设置</string>
+    <string name="theme_title">主题设置</string>
+    <string name="decoder_title">解码模式</string>
+    <string name="language_title">语言设置</string>
+    <string name="about_title">关于</string>
+    <string name="feedback_title">问题反馈</string>
+
+    <string name="menu_region_title">地区设置</string>
+    <string name="menu_region_subtitle_none">筛选地方频道，只看本地节目</string>
+    <string name="menu_region_us_nostate">选择美国某州后播放该州频道</string>
+    <string name="menu_current_fmt">当前: %1$s</string>
+    <string name="entire_province">全省</string>
+    <string name="menu_category_title">频道分类设置</string>
+    <string name="menu_category_subtitle_hidden_fmt">已隐藏 %1$d 个分类</string>
+    <string name="menu_category_subtitle_none">隐藏不感兴趣的频道分类</string>
+    <string name="menu_theme_title">主题设置</string>
+    <string name="menu_theme_subtitle">切换深浅色主题模式</string>
+    <string name="menu_decoder_title">解码模式</string>
+    <string name="menu_decoder_subtitle">切换硬件/软件解码方式</string>
+    <string name="menu_language_title">语言设置</string>
+    <string name="menu_language_subtitle">切换应用语言</string>
+    <string name="menu_feedback_title">问题反馈</string>
+    <string name="menu_feedback_subtitle">反馈使用中遇到的问题</string>
+    <string name="menu_about_title">关于</string>
+    <string name="menu_about_subtitle">版本信息、数据来源等</string>
+
+    <!-- 地区设置 -->
+    <string name="country_label">国家/地区</string>
+    <string name="country_china">中国</string>
+    <string name="country_usa">美国</string>
+    <string name="country_collapse">收起</string>
+    <string name="country_expand">展开</string>
+    <string name="us_state_hint">美国各州频道各不相同，可不选州，也可选择州后追加该州本地频道（自动从 iptv-org 加载节目单）。</string>
+    <string name="us_national">全国频道（美国全境）</string>
+    <string name="us_national_desc">仅国家频道</string>
+    <string name="us_state_label">或选择州，追加该州本地频道</string>
+    <string name="country_subtitle_us">使用 iptv-org 美国各州节目单播放所选州的本地频道</string>
+    <string name="country_subtitle_cn">使用内置播放列表，可筛选各省/市地方频道</string>
+    <string name="clear_filter">清除筛选</string>
+    <string name="save_region">保存地区</string>
+    <string name="us_state_required_toast">请先选择州才能完成设置</string>
+    <string name="city_count_fmt">%1$d个城市</string>
+    <string name="show_all_channel">显示全省频道</string>
+    <string name="show_all_channel_desc_fmt">开启后显示 %1$s 全省所有频道</string>
+    <string name="show_province_channel">显示省级频道</string>
+    <string name="show_province_channel_desc_fmt">开启后同时显示 %1$s 省级频道</string>
+    <string name="or_select_cities">或选择具体城市（可多选）</string>
+
+    <!-- 分类设置 -->
+    <string name="category_filter_hint">选择要在首页展示的频道分类</string>
+    <string name="category_filter_tip">勾选 = 展示，取消勾选 = 隐藏</string>
+    <string name="category_filter_empty">请先返回首页加载频道列表后再来设置</string>
+    <string name="hidden_mark">（已隐藏）</string>
+    <string name="show_all">全部显示</string>
+    <string name="save_settings">保存设置</string>
+
+    <!-- 主题设置 -->
+    <string name="theme_choose_hint">选择主题模式</string>
+    <string name="theme_follow_system">跟随系统</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="theme_follow_system_desc">自动跟随系统主题设置</string>
+    <string name="theme_light_desc">始终使用浅色主题</string>
+    <string name="theme_dark_desc">始终使用深色主题</string>
+
+    <!-- 解码模式 -->
+    <string name="decoder_choose_hint">选择解码模式</string>
+    <string name="decoder_hw">优先硬件解码</string>
+    <string name="decoder_hw_desc">使用GPU硬件解码，性能最佳。遇到不支持编码时自动回退到软件解码（推荐）</string>
+    <string name="decoder_sw">优先软件解码</string>
+    <string name="decoder_sw_desc">使用FFmpeg软解码，兼容性最强。适合硬件解码器不支持的频道</string>
+
+    <!-- 语言设置 -->
+    <string name="language_choose_hint">选择语言</string>
+    <string name="lang_follow_system">跟随系统</string>
+    <string name="lang_simplified_chinese">简体中文</string>
+    <string name="lang_english">English</string>
+    <string name="lang_follow_system_desc">使用系统语言（系统为中文则用中文，否则用英文）</string>
+    <string name="lang_chinese_desc">使用简体中文</string>
+    <string name="lang_english_desc">使用英文</string>
+
+    <!-- 关于 -->
+    <string name="about_app_name">橙子网络电视</string>
+    <string name="check_update">检查更新</string>
+    <string name="feed_author">投喂作者</string>
+    <string name="about_app_name_label">应用名称</string>
+    <string name="about_version_label">版本号</string>
+    <string name="about_type_label">应用类型</string>
+    <string name="about_app_type">网络电视直播播放器</string>
+    <string name="about_desc_label">应用描述</string>
+    <string name="about_description">面向安卓手机、平板、车机等设备的直播播放应用，聚合央视、卫视、地方、港澳台、少儿、体育、电影、音乐、纪录、付费等十大分类频道，点击即可一键播放，失效源自动切换，畅享稳定流畅的观看体验。</string>
+    <string name="about_features_label">核心功能</string>
+    <string name="about_features">• 多源聚合播放，失效自动切换\n• 频道收藏（播放器一键收藏，首页专属分类）\n• 支持 M3U / TXT 播放列表及双源合并\n• 台标缓存 + 加载超时兜底\n• 节目预告（EPG 电子节目单）\n• 地区筛选（省份 / 城市）</string>
+    <string name="about_tech_label">技术栈</string>
+    <string name="about_tech">Kotlin · Jetpack Compose (Material 3)\nMedia3 ExoPlayer · Coil · OkHttp · DataStore</string>
+    <string name="about_developer_label">开发者</string>
+    <string name="about_developer">Orange Way</string>
+    <string name="about_license_label">开源协议</string>
+    <string name="about_license">MIT License</string>
+    <string name="donate_title">投喂本喵~</string>
+    <string name="donate_desc">随缘投喂喵~赏喵喵一个罐罐能让喵喵开心好久哦~</string>
+    <string name="donate_qr_desc">赞赏二维码</string>
+
+    <!-- 检查更新 -->
+    <string name="check_update_title">检查更新</string>
+    <string name="current_version_fmt">当前版本 v%1$s</string>
+    <string name="ready_check">准备检查更新…</string>
+    <string name="checking_update">正在检查更新…</string>
+    <string name="found_new_version">发现新版本</string>
+    <string name="changelog">更新日志</string>
+    <string name="update_now">立即更新</string>
+    <string name="later">稍后再说</string>
+    <string name="already_latest">当前已是最新版本</string>
+    <string name="check_failed">检查更新失败</string>
+    <string name="check_failed_hint">请检查网络后重试</string>
+    <string name="downloading">正在下载更新…</string>
+    <string name="downloaded_fmt">新版本 v%1$s 下载完成</string>
+    <string name="downloaded_hint">更新包已下载完成，可立即安装或稍后安装。\n如果安装未弹出，请在系统设置中允许「安装未知应用」。</string>
+    <string name="install">安装</string>
+    <string name="download_failed">下载失败</string>
+    <string name="need_install_permission_title">需要开启安装权限</string>
+    <string name="need_install_permission_text">系统默认禁止本应用安装其他应用。\n点击「去开启」后，请在系统设置中打开「允许来自此来源的应用」，再返回点击「安装」。</string>
+    <string name="open_settings">去开启</string>
+
+    <!-- 问题反馈 -->
+    <string name="feedback_intro">你的反馈将直接发送给作者，请尽量描述清楚问题现象和操作步骤。</string>
+    <string name="feedback_title_label">问题标题</string>
+    <string name="feedback_title_hint">例如：CCTV5 播放黑屏</string>
+    <string name="feedback_content_label">问题描述</string>
+    <string name="feedback_content_hint">请描述遇到的问题、操作步骤、出现频率等</string>
+    <string name="feedback_empty_toast">请填写问题标题和描述</string>
+    <string name="feedback_submitting">提交中…</string>
+    <string name="feedback_submit">提交反馈</string>
+    <string name="feedback_clear">清空输入</string>
+    <string name="feedback_thanks_title">感谢你的反馈</string>
+    <string name="feedback_fail_title">反馈提交失败</string>
+    <string name="feedback_thanks_body">感谢你的反馈！每条意见都会被认真对待，帮助橙子网络电视变得更好。</string>
+    <string name="feedback_fail_body">提交失败，请检查网络后重试。</string>
+    <string name="feedback_device_title">设备信息</string>
+    <string name="feedback_device_model_label">设备型号</string>
+    <string name="feedback_device_os_label">系统版本</string>
+    <string name="feedback_device_app_label">应用版本</string>
+    <string name="feedback_title_colon">问题标题</string>
+    <string name="feedback_desc_colon">问题描述</string>
+    <string name="captcha_title">人机验证</string>
+    <string name="captcha_desc">请完成下方人机验证后再提交反馈。</string>
+    <string name="captcha_cancel">取消</string>
+    <string name="captcha_fail_toast">验证未完成，请重试</string>
+</resources>

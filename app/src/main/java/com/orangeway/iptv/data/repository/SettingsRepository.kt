@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.orangeway.iptv.data.DownloadSource
+import com.orangeway.iptv.data.model.Country
 import com.orangeway.iptv.ui.theme.ThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -31,6 +32,8 @@ class SettingsRepository(private val context: Context) {
         private val API_URL_KEY = stringPreferencesKey("api_url")
         private val REFRESH_INTERVAL_KEY = stringPreferencesKey("refresh_interval")
         private val REGION_DATA_KEY = stringPreferencesKey("region_data")
+        private val COUNTRY_KEY = stringPreferencesKey("selected_country")
+        private val US_STATE_KEY = stringPreferencesKey("selected_us_state")
         private val HIDDEN_CATEGORIES_KEY = stringPreferencesKey("hidden_categories")
         private val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
         private val DECODER_MODE_KEY = stringPreferencesKey("decoder_mode")
@@ -126,6 +129,29 @@ class SettingsRepository(private val context: Context) {
     suspend fun saveDownloadSource(id: String) {
         context.dataStore.edit { preferences ->
             preferences[DOWNLOAD_SOURCE_KEY] = id
+        }
+    }
+
+    /** 当前选择的国家/地区（默认中国） */
+    val country: Flow<Country> = context.dataStore.data.map { preferences ->
+        Country.fromId(preferences[COUNTRY_KEY])
+    }
+
+    /** 美国已选州代码（如 "CA"），国家非美国时为空 */
+    val usStateCode: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[US_STATE_KEY] ?: ""
+    }
+
+    suspend fun saveCountry(country: Country) {
+        context.dataStore.edit { preferences ->
+            preferences[COUNTRY_KEY] = country.id
+        }
+    }
+
+    suspend fun saveUsStateCode(code: String) {
+        context.dataStore.edit { preferences ->
+            // 空字符串表示未选州（美国模式下这会导致无频道）
+            preferences[US_STATE_KEY] = code
         }
     }
 

@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -110,9 +111,9 @@ fun ChannelCard(
                     Spacer(Modifier.height(2.dp))
                     Text(
                         text = if (channel.currentProgram.isNotBlank()) {
-                            "正在播放：${channel.currentProgram}"
+                            stringResource(R.string.now_playing_fmt, channel.currentProgram)
                         } else {
-                            channel.category.ifBlank { "直播频道" }
+                            channel.category.ifBlank { stringResource(R.string.live_channel) }
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = if (channel.currentProgram.isNotBlank()) {
@@ -130,7 +131,7 @@ fun ChannelCard(
                 // 播放按钮
                 Icon(
                     imageVector = Icons.Default.PlayCircle,
-                    contentDescription = "播放",
+                    contentDescription = stringResource(R.string.play),
                     modifier = Modifier.size(32.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -140,7 +141,7 @@ fun ChannelCard(
             if (isFavorite) {
                 Icon(
                     imageVector = Icons.Filled.Star,
-                    contentDescription = "已收藏",
+                    contentDescription = stringResource(R.string.favorited),
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(6.dp)
@@ -199,7 +200,7 @@ private fun ChannelLogo(
         if (logoUrl.isNotBlank()) {
             SubcomposeAsyncImage(
                 model = request,
-                contentDescription = "台标",
+                contentDescription = stringResource(R.string.logo),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit,
                 loading = {
@@ -230,7 +231,7 @@ private fun ChannelLogo(
                         if (timedOut) {
                             Image(
                                 painter = fallbackPainter,
-                                contentDescription = "频道图标",
+                                contentDescription = stringResource(R.string.channel_icon),
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .scale(1.5f),
@@ -253,7 +254,7 @@ private fun ChannelLogo(
                     // 加载失败：显示定制 logo，放大 50% 补偿自适应图标透明边距
                     Image(
                         painter = fallbackPainter,
-                        contentDescription = "频道图标",
+                        contentDescription = stringResource(R.string.channel_icon),
                         modifier = Modifier
                             .fillMaxSize()
                             .scale(1.5f),
@@ -265,7 +266,7 @@ private fun ChannelLogo(
             // 无 logo URL：直接显示定制 logo，放大 50% 补偿自适应图标透明边距
             Image(
                 painter = fallbackPainter,
-                contentDescription = "频道图标",
+                contentDescription = stringResource(R.string.channel_icon),
                 modifier = Modifier
                     .fillMaxSize()
                     .scale(1.5f),

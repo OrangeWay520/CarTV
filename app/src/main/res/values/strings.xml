@@ -1,4 +1,215 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">橙子网络电视</string>
+    <string name="app_name">OrangeIPTV</string>
+
+    <!-- 通用 -->
+    <string name="back">Back</string>
+    <string name="cancel">Cancel</string>
+    <string name="done">Done</string>
+    <string name="confirm">Confirm</string>
+    <string name="save">Save</string>
+    <string name="retry">Retry</string>
+    <string name="close">Close</string>
+    <string name="ok">OK</string>
+    <string name="unknown_error">Unknown error</string>
+
+    <!-- 首页 -->
+    <string name="search_channel">Search channels</string>
+    <string name="search_hint">Search channel name...</string>
+    <string name="app_icon">App icon</string>
+    <string name="close_search">Close search</string>
+    <string name="refresh">Refresh</string>
+    <string name="settings">Settings</string>
+    <string name="exit_hint">Press back again to exit</string>
+    <string name="loading_playlist">Loading channels...</string>
+    <string name="load_failed_title">Failed to load playlist</string>
+    <string name="current_playlist_fmt">Current playlist: %1$s</string>
+    <string name="no_matching">No matching channels</string>
+    <string name="reset_default">Reset to default</string>
+    <string name="back_to_top">Back to top</string>
+
+    <!-- 频道卡片 -->
+    <string name="now_playing_fmt">Now playing: %1$s</string>
+    <string name="live_channel">Live channel</string>
+    <string name="play">Play</string>
+    <string name="favorited">Favorited</string>
+    <string name="logo">Logo</string>
+    <string name="channel_icon">Channel icon</string>
+
+    <!-- 播放器 -->
+    <string name="unknown_channel">Unknown channel</string>
+    <string name="fav_added_fmt">Favorited: %1$s</string>
+    <string name="fav_removed_fmt">Removed favorite: %1$s</string>
+    <string name="player_source_label">Select source</string>
+    <string name="player_ratio_label">Aspect ratio</string>
+    <string name="ratio_auto">Auto</string>
+    <string name="ratio_fill">Fill</string>
+    <string name="player_epg_btn">Schedule</string>
+    <string name="player_source_btn_fmt">Source %1$d</string>
+    <string name="epg_now_playing_fmt">Now playing: %1$s  %2$s-%3$s</string>
+    <string name="epg_up_next_fmt">Up next: %1$s %2$s</string>
+    <string name="epg_today_fmt">Today: %1$s %2$s-%3$s</string>
+    <string name="epg_empty_toast">No schedule data yet, please try again later</string>
+    <string name="epg_now_playing_mark">(Now playing)</string>
+    <string name="epg_dialog_title_fmt">%1$s · Schedule</string>
+    <string name="epg_dialog_close">Tap outside to close</string>
+    <string name="player_stall_switch">Playback stalled, switching source…</string>
+    <string name="all_sources_failed">All sources failed to play</string>
+    <string name="source_no_audio">This source has no audio, try another</string>
+    <string name="audio_codec_unsupported">Audio codec unsupported, switching source...</string>
+    <string name="source_unavailable_fmt">Source %1$d unavailable, trying next...</string>
+    <string name="all_sources_unavailable">All sources unavailable</string>
+
+    <!-- 设置页 -->
+    <string name="settings_title">Settings</string>
+    <string name="region_title">Region</string>
+    <string name="city_title">Select city</string>
+    <string name="category_title">Channel categories</string>
+    <string name="theme_title">Theme</string>
+    <string name="decoder_title">Decoder</string>
+    <string name="language_title">Language</string>
+    <string name="about_title">About</string>
+    <string name="feedback_title">Feedback</string>
+
+    <string name="menu_region_title">Region</string>
+    <string name="menu_region_subtitle_none">Filter local channels</string>
+    <string name="menu_region_us_nostate">Select a US state to play its channels</string>
+    <string name="menu_current_fmt">Current: %1$s</string>
+    <string name="entire_province">entire province</string>
+    <string name="menu_category_title">Channel categories</string>
+    <string name="menu_category_subtitle_hidden_fmt">%1$d categories hidden</string>
+    <string name="menu_category_subtitle_none">Hide channels you don\'t care about</string>
+    <string name="menu_theme_title">Theme</string>
+    <string name="menu_theme_subtitle">Switch light / dark theme</string>
+    <string name="menu_decoder_title">Decoder</string>
+    <string name="menu_decoder_subtitle">Switch hardware / software decoding</string>
+    <string name="menu_language_title">Language</string>
+    <string name="menu_language_subtitle">Switch app language</string>
+    <string name="menu_feedback_title">Feedback</string>
+    <string name="menu_feedback_subtitle">Report a problem you encountered</string>
+    <string name="menu_about_title">About</string>
+    <string name="menu_about_subtitle">Version info, data sources</string>
+
+    <!-- 地区设置 -->
+    <string name="country_label">Country / Region</string>
+    <string name="country_china">China · 中国</string>
+    <string name="country_usa">United States</string>
+    <string name="country_collapse">Collapse</string>
+    <string name="country_expand">Expand</string>
+    <string name="us_state_hint">US channels differ by state. Select an optional state to add its local channels.</string>
+    <string name="us_national">National channels (all US states)</string>
+    <string name="us_national_desc">Nationwide only</string>
+    <string name="us_state_label">Or select a state to add its local channels</string>
+    <string name="country_subtitle_us">Plays the selected US state\'s local channels from iptv-org</string>
+    <string name="country_subtitle_cn">Uses built-in playlist, filter province / city local channels</string>
+    <string name="clear_filter">Clear filter</string>
+    <string name="save_region">Save region</string>
+    <string name="us_state_required_toast">Please select a state first to finish</string>
+    <string name="city_count_fmt">%1$d cities</string>
+    <string name="show_all_channel">Show entire province channels</string>
+    <string name="show_all_channel_desc_fmt">Show all channels of %1$s province</string>
+    <string name="show_province_channel">Show provincial channels</string>
+    <string name="show_province_channel_desc_fmt">Also show %1$s provincial channels</string>
+    <string name="or_select_cities">Or select specific cities (multi-select)</string>
+
+    <!-- 分类设置 -->
+    <string name="category_filter_hint">Select categories to show on home screen</string>
+    <string name="category_filter_tip">Checked = show, unchecked = hide</string>
+    <string name="category_filter_empty">Load the channel list from home first, then configure</string>
+    <string name="hidden_mark">(hidden)</string>
+    <string name="show_all">Show all</string>
+    <string name="save_settings">Save settings</string>
+
+    <!-- 主题设置 -->
+    <string name="theme_choose_hint">Select theme mode</string>
+    <string name="theme_follow_system">Follow system</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_follow_system_desc">Automatically follow system theme</string>
+    <string name="theme_light_desc">Always use light theme</string>
+    <string name="theme_dark_desc">Always use dark theme</string>
+
+    <!-- 解码模式 -->
+    <string name="decoder_choose_hint">Select decoder mode</string>
+    <string name="decoder_hw">Hardware first</string>
+    <string name="decoder_hw_desc">Uses GPU hardware decoding for best performance. Falls back to software automatically when unsupported (recommended).</string>
+    <string name="decoder_sw">Software first</string>
+    <string name="decoder_sw_desc">Uses FFmpeg software decoding for best compatibility. Good for unsupported channels.</string>
+
+    <!-- 语言设置 -->
+    <string name="language_choose_hint">Select language</string>
+    <string name="lang_follow_system">Follow system</string>
+    <string name="lang_simplified_chinese">简体中文</string>
+    <string name="lang_english">English</string>
+    <string name="lang_follow_system_desc">Use system language (Chinese if available, otherwise English)</string>
+    <string name="lang_chinese_desc">Use Simplified Chinese</string>
+    <string name="lang_english_desc">Use English</string>
+
+    <!-- 关于 -->
+    <string name="about_app_name">OrangeIPTV</string>
+    <string name="check_update">Check update</string>
+    <string name="feed_author">Support the author</string>
+    <string name="about_app_name_label">App name</string>
+    <string name="about_version_label">Version</string>
+    <string name="about_type_label">App type</string>
+    <string name="about_app_type">Live TV player</string>
+    <string name="about_desc_label">Description</string>
+    <string name="about_description">A live TV player for Android phones, tablets and other devices. Aggregates national, provincial, local and more channel categories — tap to play, auto-switch broken sources.</string>
+    <string name="about_features_label">Key features</string>
+    <string name="about_features">• Multi-source playback with auto switch\n• Channel favorites\n• M3U / TXT playlist support\n• Logo caching + fallback\n• EPG guide\n• Region filter (province / city)</string>
+    <string name="about_tech_label">Tech stack</string>
+    <string name="about_tech">Kotlin · Jetpack Compose (Material 3)\nMedia3 ExoPlayer · Coil · OkHttp · DataStore</string>
+    <string name="about_developer_label">Developer</string>
+    <string name="about_developer">Orange Way</string>
+    <string name="about_license_label">License</string>
+    <string name="about_license">MIT License</string>
+    <string name="donate_title">Support the author</string>
+    <string name="donate_desc">If you find this app useful, consider supporting the author with a small gift. Every gesture of encouragement is greatly appreciated.</string>
+    <string name="donate_qr_desc">Donation QR code</string>
+
+    <!-- 检查更新 -->
+    <string name="check_update_title">Check update</string>
+    <string name="current_version_fmt">Current version v%1$s</string>
+    <string name="ready_check">Ready to check...</string>
+    <string name="checking_update">Checking for update...</string>
+    <string name="found_new_version">New version available</string>
+    <string name="changelog">Changelog</string>
+    <string name="update_now">Update now</string>
+    <string name="later">Later</string>
+    <string name="already_latest">You are up to date</string>
+    <string name="check_failed">Check failed</string>
+    <string name="check_failed_hint">Please check your network and retry</string>
+    <string name="downloading">Downloading...</string>
+    <string name="downloaded_fmt">New version v%1$s downloaded</string>
+    <string name="downloaded_hint">The update package is ready. Install now or later.\nIf the installer doesn\'t appear, allow "Install unknown apps" in system settings.</string>
+    <string name="install">Install</string>
+    <string name="download_failed">Download failed</string>
+    <string name="need_install_permission_title">Install permission required</string>
+    <string name="need_install_permission_text">This app is not allowed to install other apps by default.\nTap "Open settings", enable "Allow from this source", then tap "Install" again.</string>
+    <string name="open_settings">Open settings</string>
+
+    <!-- 问题反馈 -->
+    <string name="feedback_intro">Your feedback is sent directly to the author. Please describe the issue and the steps to reproduce it as clearly as possible.</string>
+    <string name="feedback_title_label">Issue title</string>
+    <string name="feedback_title_hint">e.g. CCTV5 shows black screen</string>
+    <string name="feedback_content_label">Description</string>
+    <string name="feedback_content_hint">Describe the problem, steps, frequency, etc.</string>
+    <string name="feedback_empty_toast">Please fill in title and description</string>
+    <string name="feedback_submitting">Submitting...</string>
+    <string name="feedback_submit">Submit feedback</string>
+    <string name="feedback_clear">Clear input</string>
+    <string name="feedback_thanks_title">Thank you for your feedback</string>
+    <string name="feedback_fail_title">Feedback submission failed</string>
+    <string name="feedback_thanks_body">Thank you! Every opinion is taken seriously to make OrangeIPTV better.</string>
+    <string name="feedback_fail_body">Submission failed. Please check your network and try again.</string>
+    <string name="feedback_device_title">Device info</string>
+    <string name="feedback_device_model_label">Device model</string>
+    <string name="feedback_device_os_label">System version</string>
+    <string name="feedback_device_app_label">App version</string>
+    <string name="feedback_title_colon">Issue title</string>
+    <string name="feedback_desc_colon">Description</string>
+    <string name="captcha_title">Verification</string>
+    <string name="captcha_desc">Please complete the verification below before submitting.</string>
+    <string name="captcha_cancel">Cancel</string>
+    <string name="captcha_fail_toast">Verification incomplete. Please try again.</string>
 </resources>

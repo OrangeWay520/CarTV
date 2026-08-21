@@ -1,6 +1,9 @@
 package com.orangeway.iptv
 
 import android.app.Application
+import android.content.Context
+import android.content.res.Configuration
+import android.content.res.Resources
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
@@ -10,6 +13,25 @@ import com.orangeway.iptv.data.repository.EpgRepository
 import com.orangeway.iptv.data.repository.SettingsRepository
 
 class OrangeIPTVApp : Application(), ImageLoaderFactory {
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(LocaleHelper.wrap(base))
+    }
+
+    override fun getResources(): Resources {
+        val res = super.getResources()
+        return try {
+            if (res.configuration.locales[0] != java.util.Locale.getDefault()) {
+                LocaleHelper.refreshResources(res)
+            } else res
+        } catch (_: Exception) {
+            res
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+    }
 
     lateinit var settingsRepository: SettingsRepository
         private set

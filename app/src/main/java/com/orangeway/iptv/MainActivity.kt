@@ -2,7 +2,6 @@ package com.orangeway.iptv
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
@@ -24,7 +23,7 @@ import com.orangeway.iptv.ui.screen.SettingsScreen
 import com.orangeway.iptv.ui.theme.OrangeIPTVTheme
 import com.orangeway.iptv.ui.theme.ThemeMode
 
-class MainActivity : ComponentActivity() {
+class MainActivity : LocaleAwareActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,9 +62,6 @@ fun OrangeIPTVNavigation() {
                 onNavigateToSettings = {
                     navController.navigate("settings")
                 },
-                onNavigateToPlaylistSettings = {
-                    navController.navigate("settings/playlist")
-                },
                 onNavigateToPlayer = { channel ->
                     val urlsJson = channel.allUrls.joinToString(
                         separator = ",",
@@ -94,16 +90,6 @@ fun OrangeIPTVNavigation() {
                 homeViewModel = homeViewModel,
                 onCheckUpdateClick = { navController.navigate("update") },
                 onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        composable("settings/playlist") {
-            SettingsScreen(
-                settingsRepository = app.settingsRepository,
-                homeViewModel = homeViewModel,
-                onCheckUpdateClick = { navController.navigate("update") },
-                onNavigateBack = { navController.popBackStack() },
-                initialPage = "PLAYLIST"
             )
         }
 

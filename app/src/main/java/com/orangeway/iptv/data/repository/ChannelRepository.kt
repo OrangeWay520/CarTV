@@ -17,18 +17,45 @@ class ChannelRepository {
         .build()
 
     /**
-     * 获取频道列表
+     * 获取频道列表（支持多数据源，依次拉取并合并去重）
+     * @param apiUrls 数据源地址列表；多源时先各自拉取再按(频道名,分类)合并
      * @param mergeTxtEnabled 是否启用 M3U+TXT 双源合并
      * @param mergeTxtUrl 自定义 TXT 合并地址（空字符串则自动根据主 URL 推导）
-     * - 如果主 URL 以 .m3u/.m3u8 结尾，自动尝试将后缀改为 .txt 获取 TXT 源
-     * - 如果主 URL 以 .txt 结尾，自动尝试将后缀改为 .m3u 获取 M3U 源
-     * - 如果设置了自定义 mergeTxtUrl，则直接使用该地址
-     * - 否则作为 iptv-api 服务的基础地址，尝试 /m3u -> /txt -> / 路径
      */
     suspend fun fetchChannels(
-        apiUrl: String,
+        apiUrls: List<String>,
         mergeTxtEnabled: Boolean = false,
         mergeTxtUrl: String = ""
+    ): Result<List<Channel>> = withContext(Dispatchers.IO) {
+        try {
+            if (apiUrls.isEmpty()) return@withContext Result.failure(Exception("播放列表为空"))
+            if (apiUrls.size == 1) {
+                return@withContext fetchSingle(apiUrls[0], mergeTxtEnabled, mergeTxtUrl)
+            }
+            // 多源（美国全国+州）：各自拉取原始频道，汇总后再按频道合并去重
+            var anyFailed = true
+            val combined = mutableListOf<Channel>()
+            for (url in apiUrls) {
+                val one = fetchSingle(url, false, "")
+                if (one.isSuccess) {
+                    anyFailed = false
+                    combined.addAll(one.getOrThrow())
+                }
+            }
+            if (anyFailed || combined.isEmpty()) {
+                return@withContext Result.failure(Exception("无法解析播放列表，请检查地址是否正确"))
+            }
+            Result.success(mergeChannels(combined))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /** 拉取单个数据源的频道列表 */
+    private suspend fun fetchSingle(
+        apiUrl: String,
+        mergeTxtEnabled: Boolean,
+        mergeTxtUrl: String
     ): Result<List<Channel>> = withContext(Dispatchers.IO) {
         try {
             val url = apiUrl.trimEnd('/')
@@ -111,9 +138,7 @@ class ChannelRepository {
                 return@withContext Result.failure(Exception("播放列表为空"))
             }
 
-            // 按频道名合并，同一频道所有 URL 都保留
-            val merged = mergeChannels(channels)
-            Result.success(merged)
+            Result.success(mergeChannels(channels))
         } catch (e: Exception) {
             Result.failure(e)
         }

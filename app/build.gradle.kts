@@ -29,8 +29,8 @@ android {
         applicationId = "com.orangeway.iptv"
         minSdk = 23
         targetSdk = 37
-        versionCode = 4
-        versionName = "1.0.3"
+        versionCode = 5
+        versionName = "1.0.4"
         // 问题反馈用的 GitHub Token（仅创建 Issue 权限），未配置时提交会提示失败
         buildConfigField("String", "GITHUB_TOKEN", "\"$githubToken\"")
         // 问题反馈用 WxPusher 微信推送配置，未配置时提交会提示失败
@@ -107,4 +107,10 @@ dependencies {
     // 支持 mp3/aac/vorbis/opus/flac 软解码，解决设备不支持音频编码问题
     implementation(files("libs/lib-decoder-ffmpeg-release.aar"))
     debugImplementation(libs.androidx.ui.tooling)
+
+    // hCaptcha 人机验证（Jetpack Compose 原生 SDK，替代自研验证码）
+    // 反馈前端在 SDK 容器内渲染 checkbox，验证通过后携带 token 交由 Worker 服务端校验
+    implementation("com.github.hCaptcha.hcaptcha-android-sdk:compose-sdk:5.0.1")
+    // hCaptcha SDK 依赖 FragmentActivity，需显式引入 fragment-ktx
+    implementation("androidx.fragment:fragment-ktx:1.8.5")
 }

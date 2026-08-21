@@ -51,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.widget.Toast
 import com.orangeway.iptv.BuildConfig
+import com.orangeway.iptv.R
 import com.orangeway.iptv.data.DownloadSource
 import com.orangeway.iptv.data.InstallResult
 import com.orangeway.iptv.data.UpdateManager
@@ -122,12 +124,12 @@ fun CheckUpdatePage(
             IconButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.back),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
             Text(
-                "检查更新",
+                stringResource(R.string.check_update_title),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -154,7 +156,7 @@ fun CheckUpdatePage(
             ) {
                 Icon(
                     Icons.Filled.SystemUpdate,
-                    contentDescription = "检查更新",
+                    contentDescription = stringResource(R.string.check_update),
                     modifier = Modifier.fillMaxSize().padding(20.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -162,14 +164,14 @@ fun CheckUpdatePage(
 
             Spacer(Modifier.height(16.dp))
             Text(
-                "橙子网络电视",
+                stringResource(R.string.about_app_name),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "当前版本 v$versionName",
+                stringResource(R.string.current_version_fmt, versionName),
                 fontSize = 15.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -264,7 +266,7 @@ fun CheckUpdatePage(
                 ) {
                     when (val state = updater.state) {
                         is UpdateState.Idle -> {
-                            Text("准备检查更新…", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(R.string.ready_check), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
 
                         is UpdateState.Checking -> {
@@ -274,12 +276,12 @@ fun CheckUpdatePage(
                                 strokeWidth = 3.dp
                             )
                             Spacer(Modifier.height(12.dp))
-                            Text("正在检查更新…", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(R.string.checking_update), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
 
                         is UpdateState.Found -> {
                             Text(
-                                "发现新版本",
+                                stringResource(R.string.found_new_version),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -293,7 +295,7 @@ fun CheckUpdatePage(
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                "当前版本 v$versionName",
+                                stringResource(R.string.current_version_fmt, versionName),
                                 fontSize = 13.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -303,7 +305,7 @@ fun CheckUpdatePage(
                                 HorizontalDivider(color = MaterialTheme.colorScheme.surface, thickness = 1.dp)
                                 Spacer(Modifier.height(12.dp))
                                 Text(
-                                    "更新日志",
+                                    stringResource(R.string.changelog),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -323,24 +325,24 @@ fun CheckUpdatePage(
                                 modifier = Modifier.fillMaxWidth().height(48.dp),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text("立即更新", fontSize = 16.sp)
+                                Text(stringResource(R.string.update_now), fontSize = 16.sp)
                             }
                             Spacer(Modifier.height(8.dp))
                             TextButton(onClick = onBack) {
-                                Text("稍后再说")
+                                Text(stringResource(R.string.later))
                             }
                         }
 
                         is UpdateState.NoUpdate -> {
                             Icon(
                                 Icons.Filled.CheckCircle,
-                                contentDescription = "已是最新",
+                                contentDescription = stringResource(R.string.already_latest),
                                 modifier = Modifier.size(48.dp),
                                 tint = MaterialTheme.colorScheme.secondary
                             )
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                "当前已是最新版本",
+                                stringResource(R.string.already_latest),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -357,20 +359,20 @@ fun CheckUpdatePage(
                         is UpdateState.Error -> {
                             Icon(
                                 Icons.Filled.Warning,
-                                contentDescription = "检查失败",
+                                contentDescription = stringResource(R.string.check_failed),
                                 modifier = Modifier.size(48.dp),
                                 tint = MaterialTheme.colorScheme.error
                             )
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                "检查更新失败",
+                                stringResource(R.string.check_failed),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                "请检查网络后重试",
+                                stringResource(R.string.check_failed_hint),
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -379,7 +381,7 @@ fun CheckUpdatePage(
                                 onClick = { updater.check() },
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text("重试")
+                                Text(stringResource(R.string.retry))
                             }
                         }
 
@@ -392,7 +394,7 @@ fun CheckUpdatePage(
                             )
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                "正在下载更新…",
+                                stringResource(R.string.downloading),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -417,21 +419,20 @@ fun CheckUpdatePage(
                         is UpdateState.Downloaded -> {
                             Icon(
                                 Icons.Filled.CheckCircle,
-                                contentDescription = "下载完成",
+                                contentDescription = stringResource(R.string.downloaded_fmt, state.info.versionName),
                                 modifier = Modifier.size(48.dp),
                                 tint = MaterialTheme.colorScheme.secondary
                             )
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                "新版本 v${state.info.versionName} 下载完成",
+                                stringResource(R.string.downloaded_fmt, state.info.versionName),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                "更新包已下载完成，可立即安装或稍后安装。\n" +
-                                        "如果安装未弹出，请在系统设置中允许「安装未知应用」。",
+                                stringResource(R.string.downloaded_hint),
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 lineHeight = 20.sp
@@ -449,31 +450,31 @@ fun CheckUpdatePage(
                                 modifier = Modifier.fillMaxWidth().height(48.dp),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text("安装", fontSize = 16.sp)
+                                Text(stringResource(R.string.install), fontSize = 16.sp)
                             }
                             Spacer(Modifier.height(8.dp))
                             TextButton(onClick = onBack) {
-                                Text("稍后再说")
+                                Text(stringResource(R.string.later))
                             }
                         }
 
                         is UpdateState.DownloadError -> {
                             Icon(
                                 Icons.Filled.Error,
-                                contentDescription = "下载失败",
+                                contentDescription = stringResource(R.string.download_failed),
                                 modifier = Modifier.size(48.dp),
                                 tint = MaterialTheme.colorScheme.error
                             )
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                "下载失败",
+                                stringResource(R.string.download_failed),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = state.msg.ifBlank { "请检查网络后重试" },
+                                text = state.msg.ifBlank { stringResource(R.string.check_failed_hint) },
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
@@ -484,7 +485,7 @@ fun CheckUpdatePage(
                                 modifier = Modifier.fillMaxWidth().height(48.dp),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text("重试", fontSize = 16.sp)
+                                Text(stringResource(R.string.retry), fontSize = 16.sp)
                             }
                         }
                     }
