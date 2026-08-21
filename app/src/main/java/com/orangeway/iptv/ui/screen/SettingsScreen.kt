@@ -380,7 +380,8 @@ private fun MainMenuPage(
             icon = Icons.Default.Info,
             title = stringResource(R.string.menu_about_title),
             subtitle = stringResource(R.string.menu_about_subtitle),
-            onClick = onAboutClick
+            onClick = onAboutClick,
+            showBadge = UpdateCheck.hasUpdate
         )
     }
 }
@@ -390,7 +391,8 @@ private fun MenuCard(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     subtitle: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    showBadge: Boolean = false
 ) {
     Card(
         onClick = onClick,
@@ -422,11 +424,23 @@ private fun MenuCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Box {
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                // 有新版本可更新时，在箭头右上角点亮小红点
+                if (showBadge) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.error)
+                    )
+                }
+            }
         }
     }
 }
