@@ -29,8 +29,8 @@ android {
         applicationId = "com.orangeway.iptv"
         minSdk = 23
         targetSdk = 37
-        versionCode = 5
-        versionName = "1.0.4"
+        versionCode = 6
+        versionName = "1.0.5"
         // 问题反馈用的 GitHub Token（仅创建 Issue 权限），未配置时提交会提示失败
         buildConfigField("String", "GITHUB_TOKEN", "\"$githubToken\"")
         // 问题反馈用 WxPusher 微信推送配置，未配置时提交会提示失败

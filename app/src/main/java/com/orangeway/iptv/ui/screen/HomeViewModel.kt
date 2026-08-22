@@ -199,7 +199,7 @@ class HomeViewModel(
         //    美国模式的频道来自所选州的 iptv-org 节目单（英文台名），不在此处过滤
         val regionFiltered = if (currentCountry != Country.USA && filter.regionMap.isNotEmpty()) {
             allChannels.filter { channel ->
-                if (channel.category.contains("地方")) {
+                if (channel.categories.any { it.contains("地方") }) {
                     // 检查频道是否匹配任一已设置的省份/城市
                     filter.regionMap.entries.any { (province, entry) ->
                         val provinceCities = RegionProvider.provinces
@@ -225,17 +225,17 @@ class HomeViewModel(
         }
 
         // 2. 隐藏分类筛选
-        val allCategories = regionFiltered.map { it.category }.distinct().filter { it.isNotBlank() }
+        val allCategories = regionFiltered.flatMap { it.categories }.distinct().filter { it.isNotBlank() }
         val filteredChannels = if (hiddenList.isEmpty()) {
             regionFiltered
         } else {
-            regionFiltered.filter { it.category !in hiddenList }
+            regionFiltered.filter { channel -> channel.categories.none { it in hiddenList } }
         }
 
         // 3. 收藏频道虚拟分类：置顶显示（不受地区/隐藏分类影响）
         val favoriteSet = filter.favoriteChannels.toSet()
         val hasFavorites = allChannels.any { it.name in favoriteSet }
-        val categories = filteredChannels.map { it.category }.distinct().filter { it.isNotBlank() }
+        val categories = filteredChannels.flatMap { it.categories }.distinct().filter { it.isNotBlank() }
         val displayCategories = buildList {
             if (hasFavorites) add(FAVORITE_CATEGORY)
             addAll(categories)

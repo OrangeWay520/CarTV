@@ -129,7 +129,7 @@ fun HomeScreen(
     LaunchedEffect(loadedChannels.size, uiState.isLoading) {
         if (!uiState.isLoading && loadedChannels.isNotEmpty()) {
             loadedChannels
-                .filter { it.category == "央视频道" || it.category == "卫视频道" }
+                .filter { it.categories.contains("央视频道") || it.categories.contains("卫视频道") }
                 .mapNotNull { it.logo.ifBlank { null } }
                 .distinct()
                 .take(120)
@@ -359,7 +359,7 @@ fun HomeScreen(
                                     uiState.channels.filter { it.name in favoriteSet }
                                 }
                                 uiState.selectedCategory != null -> {
-                                    uiState.channels.filter { it.category == uiState.selectedCategory }
+                                    uiState.channels.filter { it.categories.contains(uiState.selectedCategory) }
                                 }
                                 else -> uiState.channels
                             }

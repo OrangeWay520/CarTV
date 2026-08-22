@@ -145,20 +145,21 @@ class ChannelRepository {
     }
 
     /**
-     * 按"频道名+分类"合并多个 URL
+     * 按频道名合并多个 URL，并归并分类列表
      * 例如 CCTV1 在 TXT 文件中有多个地址，合并成一个 Channel 对象
-     * 注意：必须按 (name, category) 分组，否则双分类频道（如"广东少儿"同时归入
-     * 少儿频道和地方频道）会被合并成一条，只保留第一个出现的分类
+     * 分类取并集：同一频道出现在多个分类（如"广东少儿"同时归入少儿频道和地方频道，
+     * 或 iptv-org 的 "Animation;Kids" 多分类）时，合并后仍归属所有分类
      */
     private fun mergeChannels(channels: List<Channel>): List<Channel> {
         val merged = channels
-            .groupBy { it.name to it.category }
+            .groupBy { it.name }
             .map { (_, list) ->
                 val first = list.first()
                 // 使用 allUrls 而不是 url，确保 mergeM3UWithTXT 合并的多源信息不被丢失
                 val allUrls = list.flatMap { it.allUrls }.distinct()
                 first.copy(
                     urls = allUrls,
+                    categories = list.flatMap { it.categories }.distinct(),
                     logo = list.firstOrNull { it.logo.isNotBlank() }?.logo ?: first.logo,
                     tvgId = list.firstOrNull { it.tvgId.isNotBlank() }?.tvgId ?: first.tvgId,
                     epgUrl = list.firstOrNull { it.epgUrl.isNotBlank() }?.epgUrl ?: first.epgUrl
@@ -208,7 +209,7 @@ class ChannelRepository {
                 txtChannel.copy(
                     logo = if (txtChannel.logo.isBlank()) m3uFirst.logo else txtChannel.logo,
                     tvgId = if (txtChannel.tvgId.isBlank()) m3uFirst.tvgId else txtChannel.tvgId,
-                    category = if (txtChannel.category.isBlank()) m3uFirst.category else txtChannel.category
+                    categories = if (txtChannel.categories.isEmpty()) m3uFirst.categories else txtChannel.categories
                 )
             } else {
                 txtChannel

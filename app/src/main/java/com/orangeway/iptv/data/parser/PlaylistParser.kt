@@ -46,7 +46,7 @@ object PlaylistParser {
                             Channel(
                                 name = name.ifBlank { tvgName },
                                 url = url,
-                                category = groupTitle,
+                                categories = parseCategories(groupTitle),
                                 logo = tvgLogo,
                                 tvgId = tvgId,
                                 epgUrl = epgUrl
@@ -96,7 +96,7 @@ object PlaylistParser {
                         Channel(
                             name = name,
                             url = url,
-                            category = currentCategory
+                            categories = parseCategories(currentCategory)
                         )
                     )
                 }
@@ -121,4 +121,13 @@ object PlaylistParser {
         val regex = """$attr="([^"]*)"""".toRegex()
         return regex.find(line)?.groupValues?.getOrElse(1) { "" } ?: ""
     }
+
+    /**
+     * 解析分类字符串。iptv-org 的 group-title 可能用分号分隔多个分类
+     * （如 "Animation;Kids;Religious"），需拆分为独立分类列表。
+     */
+    private fun parseCategories(raw: String): List<String> =
+        raw.split(';')
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
 }

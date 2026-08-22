@@ -113,7 +113,8 @@ fun ChannelCard(
                         text = if (channel.currentProgram.isNotBlank()) {
                             stringResource(R.string.now_playing_fmt, channel.currentProgram)
                         } else {
-                            channel.category.ifBlank { stringResource(R.string.live_channel) }
+                            channel.categories.firstOrNull()?.takeIf { it.isNotBlank() }
+                                ?: stringResource(R.string.live_channel)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = if (channel.currentProgram.isNotBlank()) {
